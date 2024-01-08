@@ -55,7 +55,7 @@ const getAllMessagesFile = () => {
   return blobDoc;
 }
 
-const uploadAllMessagesFile = () => {
+const getUploadedFileId = () => {
   let url = "https://api.openai.com/v1/files"
   let messagesFile = getAllMessagesFile()
 
@@ -80,7 +80,7 @@ const uploadAllMessagesFile = () => {
   return fileId;
 }
 
-const createOpenAiAssistant = (fileId) => {
+const getCreatedAssistantId = (fileId) => {
   let url = "https://api.openai.com/v1/assistants"
 
   let headers = {
@@ -114,8 +114,8 @@ const createOpenAiAssistant = (fileId) => {
 
 const createAssistant = () => {
   try {
-    let fileId = uploadAllMessagesFile();
-    let assistantId = createOpenAiAssistant(fileId);
+    let fileId = getUploadedFileId();
+    let assistantId = getCreatedAssistantId(fileId);
 
     let settings = {
       fileId: fileId,
@@ -129,68 +129,7 @@ const createAssistant = () => {
   }
 };
 
-function deleteFile() {
-  const userProperties = PropertiesService.getUserProperties();
-  const settingsTemp = userProperties.getProperty("settingsAPB");
-  const settings = JSON.parse(settingsTemp);
-
-  let url = `https://api.openai.com/v1/assistants/${settings.assistantId}/files/${settings.fileId}`;
-
-  let headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${API_KEY}`,
-    "OpenAI-Beta": "assistants=v1"
-  };
-
-  let options = {
-    "method": "delete",
-    "headers": headers
-  };
-
-  UrlFetchApp.fetch(url, options);
-
-  console.log(`File: ${settings.fileId} was deleted`);
-  deleteAssistant(settings.assistantId)
-}
-
-function deleteAssistant(assistantId) {
-  const url = `https://api.openai.com/v1/assistants/${assistantId}`;
-
-  const headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${API_KEY}`,
-    "OpenAI-Beta": "assistants=v1"
-  };
-
-  const options = {
-    "method": "delete",
-    "headers": headers
-  };
-
-  if (isFileDeleted) {
-    const response = UrlFetchApp.fetch(url, options);
-
-    let result = JSON.parse(response)
-
-    if (result.deleted === true) {
-      console.log(`Assistant: ${settings.assistantId} was deleted`);
-    } else {
-      console.error(`Error deleting assistant: ${settings.assistantId}, Status Code: ${response.getResponseCode()}`);
-    }
-  }
-
-  const updatedSettings = {
-    fileId: "",
-    assistantId: "",
-    isAssistantCreated: false
-  };
-
-  saveSettings(updatedSettings);
-
-  console.log("Settings updated");
-}
-
-const deleteOpenAiAssistant = () => {
+const deleteAssistantAndFile = () => {
   // getting user properties:
   const userProperties = PropertiesService.getUserProperties();
   const settingsTemp = userProperties.getProperty("settingsAPB");
@@ -200,61 +139,61 @@ const deleteOpenAiAssistant = () => {
   const assistantId = settings.assistantId
 
   // url's to use
-  let fileUrl = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`
+  let fileUrl = `https://api.openai.com/v1/files/${fileId}`
   let assistantUrl = `https://api.openai.com/v1/assistants/${assistantId}`
 
-  // headers and options:
-  const headers = {
+  // headers and options for assistant:
+  const assistantHeaders = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${API_KEY}`,
     "OpenAI-Beta": "assistants=v1"
   };
 
-  const options = {
+  const assistantOptions = {
     "method": "delete",
-    "headers": headers
+    "headers": assistantHeaders
+  };
+
+  // deleting assistant:
+  try {
+    UrlFetchApp.fetch(assistantUrl, assistantOptions)
+    console.log(`Assistant: ${assistantId} was deleted`)
+  } catch (error) {
+    console.error("Error in deleting assistant: ", error);
+  }
+
+  // headers and options for file:
+  const fileHeaders = {
+    "Authorization": `Bearer ${API_KEY}`
+  };
+
+  const fileOptions = {
+    "method": "delete",
+    "headers": fileHeaders
   };
 
   // deleting file:
   try {
-    UrlFetchApp.fetch(fileUrl, options)
+    UrlFetchApp.fetch(fileUrl, fileOptions)
+    console.log(`File: ${fileId} was deleted`)
   } catch (error) {
     console.error("Error in deleting file: ", error);
   }
 
-  // deleting assistant:
-  try {
-    UrlFetchApp.fetch(assistantUrl, options)
-  } catch (error) {
-    console.error("Error in deleting assistant: ", error);
-  }
+  let updatedSettings = {
+    fileId: "",
+    assistantId: "",
+    isAssistantCreated: false
+  };
+
+  saveSettings(updatedSettings);
 }
 
-const getEmailsAfterTimestamp = () => {
-  let unixTimestamp = 1704631140;
+const udpateCard = () => {
+  return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popToRoot().updateCard(card)).build();
+}
 
-  let searchQuery = `is:unread after:${unixTimestamp}`;
-
-  let searchedThreads = GmailApp.search(searchQuery);
-
-  searchedThreads.forEach((thread) => {
-    let messages = thread.getMessages();
-
-    messages.forEach((message) => {
-      let subject = message.getSubject();
-      let sender = message.getFrom();
-      let body = message.getPlainBody();
-
-      Logger.log('Subject: ' + subject);
-      Logger.log('Sender: ' + sender);
-      Logger.log('Body: ' + body);
-      Logger.log('--------------');
-    });
-  });
-};
-
-
-const myGmailFunction = () => {
+const runAddon = () => {
   let userProperties = PropertiesService.getUserProperties()
   let settingsTemp = userProperties.getProperty("settingsAPB")
   let settings = JSON.parse(settingsTemp)
@@ -262,7 +201,8 @@ const myGmailFunction = () => {
   let isAssistantCreated = settings.isAssistantCreated
 
   let createAction = CardService.newAction().setFunctionName('createAssistant');
-  let deleteAction = CardService.newAction().setFunctionName('deleteAssistant');
+  let deleteAction = CardService.newAction().setFunctionName('deleteAssistantAndFile');
+  let refreshAction = CardService.newAction().setFunctionName('udpateCard');
 
   let cardSection = CardService.newCardSection()
     .setHeader("Section header");
@@ -280,6 +220,12 @@ const myGmailFunction = () => {
 
     cardSection.addWidget(deleteButton);
   }
+
+  let refreshActionButton = CardService.newTextButton()
+    .setText("Refresh assistant")
+    .setOnClickAction(refreshAction);
+
+  cardSection.addWidget(refreshActionButton);
 
   let textParagraph = CardService.newTextParagraph()
     .setText("This is some informative text.");

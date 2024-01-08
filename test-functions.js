@@ -49,7 +49,7 @@ const sendEmail = () => {
   console.log("replied")
 }
 
-function overRide() {
+function deleteSettings() {
   let updatedSettings = {
     fileId: "",
     assistantId: "",
@@ -58,3 +58,26 @@ function overRide() {
 
   saveSettings(updatedSettings);
 }
+
+const getEmailsAfterTimestamp = () => {
+  let unixTimestamp = 1704631140;
+
+  let searchQuery = `is:unread after:${unixTimestamp}`;
+
+  let searchedThreads = GmailApp.search(searchQuery);
+
+  searchedThreads.forEach((thread) => {
+    let messages = thread.getMessages();
+
+    messages.forEach((message) => {
+      let subject = message.getSubject();
+      let sender = message.getFrom();
+      let body = message.getPlainBody();
+
+      Logger.log('Subject: ' + subject);
+      Logger.log('Sender: ' + sender);
+      Logger.log('Body: ' + body);
+      Logger.log('--------------');
+    });
+  });
+};
