@@ -5,6 +5,18 @@ const API_KEY = "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";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
 
+/*
+  TO-DO:
+
+  1. Add time driven function (trigger), function logic: 
+  - firstly, check 3 days before and collect all unread and unresponded emails and response them (save timestamp of func execution);
+  - this function will run every hour, so on the next run it will take saved timestamp and add it to the search query;
+
+  2. Threads problem, two possible ways:
+  - create connection between email thread and assistant thread;
+  - every time create new thread for new email and then delete it after generation;
+*/
+
 const saveSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
@@ -22,6 +34,53 @@ const saveSettings = (settings) => {
   } catch (error) {
     console.error("Error saving or retrieving settings:", error);
   }
+};
+
+const summarization = (input) => {
+  const url = "https://api.openai.com/v1/chat/completions";
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${API_KEY}`,
+  };
+
+  const options = {
+    headers,
+    method: "GET",
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      model: "gpt-4-1106-preview", // gpt-3.5-turbo
+      messages: [
+        {
+          role: "system",
+          content: `
+            1. Review the emails to understand their content.
+            2. Determine the main purpose or topic of each.
+            3. Note common elements in structure, tone, and phrases.
+            4. Make emphasize on summarization of key information, requests, or questions.
+            5. Create a professional email template with placeholders for variable details (e.g., names, dates).
+            6. Ensure the template is clear, professional, and easily customizable.
+            7. Do not include any names
+            8. Skip main topics, because the template will be used with another topics
+
+            Avoid including any sensitive or personal information in the template.
+          `,
+        },
+        {
+          role: "user",
+          content: input,
+        },
+      ],
+      temperature: 0,
+    }),
+  };
+
+  const response = JSON.parse(
+    UrlFetchApp.fetch(url, options).getContentText(),
+  );
+
+  let summarizedText = response.choices[0].message.content
+  return summarizedText;
 };
 
 const getAllMessagesFile = () => {
@@ -50,7 +109,9 @@ const getAllMessagesFile = () => {
     allThreadMessages = "";
   }
 
-  let blobDoc = Utilities.newBlob(allMessages, 'text/plain', `${USERNAME}-emails.txt`);
+  let summarizedMessages = summarization(allMessages)
+
+  let blobDoc = Utilities.newBlob(summarizedMessages, 'text/plain', `${USERNAME}-emails.txt`);
 
   return blobDoc;
 }
@@ -92,7 +153,7 @@ const getCreatedAssistantId = (fileId) => {
   let payload = {
     name: `${USERNAME}-assistant`,
     description: `Support bot of ${USERNAME}`,
-    instructions: "You are support bot. Your responses style, structure and manner have to be the same as in uploaded file",
+    instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.",
     tools: [{ "type": "retrieval" }],
     model: "gpt-4-1106-preview",
     file_ids: [`${fileId}`]
