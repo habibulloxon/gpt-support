@@ -9,24 +9,24 @@ function test() {
   console.log(timestamp)
 }
 
-function sendFile() {
-  let file = getAllMessagesFile()
-  let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
+// function sendFile() {
+//   let file = getAllMessagesFile()
+//   let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
 
-  let data = {
-    'chat_id': '1265546870',
-    'document': file
-  };
+//   let data = {
+//     'chat_id': '1265546870',
+//     'document': file
+//   };
 
-  let options = {
-    'method': 'POST',
-    'payload': data,
-  };
+//   let options = {
+//     'method': 'POST',
+//     'payload': data,
+//   };
 
-  UrlFetchApp.fetch(url, options);
+//   UrlFetchApp.fetch(url, options);
 
-  console.log("sent")
-}
+//   console.log("sent")
+// }
 
 function getIds() {
   let threads = GmailApp.getInboxThreads();
@@ -49,22 +49,36 @@ const sendEmail = () => {
   console.log("replied")
 }
 
-function deleteSettings() {
-  let updatedSettings = {
-    fileId: "",
-    assistantId: "",
-    isAssistantCreated: false
-  };
+// function deleteSettings() {
+//   let updatedSettings = {
+//     fileId: "",
+//     assistantId: "",
+//     isAssistantCreated: false
+//   };
 
-  saveSettings(updatedSettings);
-}
+//   saveSettings(updatedSettings);
+// }
+
+// const getCurrentTimeStamp = () => {
+//   let currentTimestamp = Math.floor(Date.now() / 1000);
+
+//   return currentTimestamp
+// }
+
+// const getTimestampThreeDaysAgo = () => {
+//   const threeDaysAgo = new Date();
+//   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+//   const timestampThreeDaysAgo = Math.floor(threeDaysAgo.getTime() / 1000);
+
+//   return timestampThreeDaysAgo;
+// }
 
 const getEmailsAfterTimestamp = () => {
-  let unixTimestamp = 1704631140;
-
-  let searchQuery = `is:unread after:${unixTimestamp}`;
-
+  let searchQuery = `is:unread after:${1704870668}`;
+  console.log(searchQuery)
   let searchedThreads = GmailApp.search(searchQuery);
+
 
   searchedThreads.forEach((thread) => {
     let messages = thread.getMessages();

