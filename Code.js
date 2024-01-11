@@ -1,27 +1,24 @@
 const ADDON_TITLE = "Email GPT support";
-
 const API_KEY = "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";
-
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
 
-/*
-  TO-DO:
-
-  1. Add time driven function (trigger), function logic: 
-  - firstly, check 3 days before and collect all unread and unresponded emails and response them (save timestamp of func execution);
-  - this function will run every hour, so on the next run it will take saved timestamp and add it to the search query;
-
-  2. Threads problem, two possible ways:
-  - create connection between email thread and assistant thread;
-  - every time create new thread for new email and then delete it after generation;
-*/
+/**
+ * Gets current time stamp
+ *
+ * @returns {integer} - time stamp.
+ */
 const getCurrentTimeStamp = () => {
   let currentTimestamp = Math.floor(Date.now() / 1000);
 
   return currentTimestamp
 }
 
+/**
+ * Gets three days ago time stamp
+ *
+ * @returns {integer} - three days ago time stamp.
+ */
 const getTimestampThreeDaysAgo = () => {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -31,131 +28,277 @@ const getTimestampThreeDaysAgo = () => {
   return timestampThreeDaysAgo;
 }
 
-const clearSettings = () => {
-  let updatedSettings = {
-    fileId: "",
-    assistantId: "",
-    isAssistantCreated: false
-  };
-
-  saveSettings(updatedSettings);
-}
-
-const temporarySettings = () => {
-  let threeDaysAgoTimestamp = getTimestampThreeDaysAgo();
-  let updatedSettings = {
-    fileId: "",
-    assistantId: "",
-    isAssistantCreated: false,
-    checkTimeStamp: threeDaysAgoTimestamp
-  };
-
-  saveSettings(updatedSettings);
-}
-
-const getUnreadMessages = () => {
+/**
+ * Runs thread under specific id
+ * 
+ * @param {string} threadId - assistant thread id
+ * @returns {integer} - run id.
+ */
+const runAssistantThread = (threadId) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let currentTimestamp = getCurrentTimeStamp()
+  const assistantId = settings.assistantId
 
+  try {
+    let url = `https://api.openai.com/v1/threads/${threadId}/runs`;
+
+    let headers = {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v1'
+    };
+
+    let payload = {
+      'assistant_id': assistantId
+    };
+
+    let options = {
+      'method': 'post',
+      'headers': headers,
+      'payload': JSON.stringify(payload)
+    };
+
+    let response = UrlFetchApp.fetch(url, options);
+
+    let result = JSON.parse(response);
+
+    let runId = result.id;
+
+    return runId;
+  } catch (error) {
+    // Handle the error as per your requirements
+    console.error(`Error in running thread ID: ${threadId}:`, error);
+  }
+}
+
+/**
+ * Retrieves thread run status
+ * 
+ * @param {string} threadId - assistant thread id
+ * @param {string} runId - run id
+ * @returns {string} - run status.
+ */
+const retrieveRunStatus = (threadId, runId) => {
+  try {
+    let url = `https://api.openai.com/v1/threads/${threadId}/runs/${runId}`;
+
+    let headers = {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v1'
+    };
+
+    let options = {
+      'method': 'get',
+      'headers': headers
+    };
+
+    let response = UrlFetchApp.fetch(url, options);
+
+    let result = JSON.parse(response);
+
+    let runStatus = result.status;
+
+    return runStatus;
+  } catch (error) {
+    // Handle the error as per your requirements
+    console.error(`Error in retrieving run status ID: ${runId} of thread ID: ${threadId}:`, error);
+  }
+}
+
+/**
+ * Gets assistant messages
+ * 
+ * @param {string} threadId - assistant thread id
+ * @returns {string} - response from assistant.
+ */
+const getAssistantMessages = (threadId) => {
+  try {
+    let url = `https://api.openai.com/v1/threads/${threadId}/messages`;
+    let headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`,
+      "OpenAI-Beta": "assistants=v1"
+    };
+
+    let options = {
+      method: "get",
+      headers: headers
+    };
+
+    let response = UrlFetchApp.fetch(url, options);
+    let result = JSON.parse(response);
+
+    let output = result.data[0].content[0].text.value
+
+    return output;
+  } catch (error) {
+    // Handle the error as per your requirements
+    console.error(`Error in getting messages in thread ID: ${threadId}:`, error);
+  }
+}
+/**
+ * Gets unread messages and respond them
+ */
+const replyUnredMessages = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const currentTimestamp = getCurrentTimeStamp()
   const previousCheckDate = settings.checkTimeStamp;
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
-  console.log(searchQuery)
   const searchedThreads = GmailApp.search(searchQuery);
-
-  if(searchedThreads.length === 0){
-    console.log("There is no new email")
-  }
-
-  let msgs = "";  
 
   searchedThreads.forEach((thread) => {
     let messages = thread.getMessages();
+    let messageCount = thread.getMessageCount();
+    let lastMessage = messages[messageCount - 1];
 
-    messages.forEach((message) => {
-      let subject = message.getSubject();
-      let sender = message.getFrom();
-      let body = message.getPlainBody();
+    let threadId = thread.getId();
+    let message = lastMessage.getRawContent();
 
-      msgs += `
-        Subject: ${subject}
-        Sender: ${sender}
-        Body: ${body}
-      `;
+    let assistantResponse = null;
 
-      message.reply("Got your email, Lancelot!")
-    });
+    let assistantThreadId = getAssistantThreadId(threadId);
+    addMessageToAssistantThread(assistantThreadId, message);
+    let runId = runAssistantThread(assistantThreadId);
+
+    let runStatus;
+    while ((runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed") {
+      if (runStatus === "queued") {
+        Utilities.sleep(5000); // Add a sleep interval (5 seconds in this case) to avoid constant polling
+      }
+    }
+
+    assistantResponse = getAssistantMessages(assistantThreadId);
+
+    lastMessage.reply(assistantResponse)
   });
 
   const updatedSettings = {
     ...settings,
     checkTimeStamp: currentTimestamp,
   };
-
   saveSettings(updatedSettings);
+};
 
-  if(msgs !== ""){
-    const blobDoc = Utilities.newBlob(msgs, 'text/plain', `${USERNAME}-emails.txt`);
-    sendFileTG(blobDoc);
+/**
+ * Creates new assistant thread
+ * 
+ * @returns {integer} - created thread id.
+ */
+const createNewThread = () => {
+  try {
+    let url = 'https://api.openai.com/v1/threads';
+
+    let headers = {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v1'
+    };
+
+    let options = {
+      'method': 'post',
+      'headers': headers,
+      'payload': JSON.stringify({})
+    };
+
+    let response = UrlFetchApp.fetch(url, options);
+
+    let result = JSON.parse(response);
+    let threadId = result.id;
+
+    return threadId;
+  } catch (error) {
+    console.error('Error in creating new thread:', error);
+  }
+}
+
+/**
+ * Adds message to particullar thread
+ * 
+ * @param {string} assistantThreadId - assistant thread id.
+ * @param {string} message - message from user.
+ * @returns {integer} - added message thread id.
+ */
+const addMessageToAssistantThread = (assistantThreadId, message) => {
+  try {
+    let url = `https://api.openai.com/v1/threads/${assistantThreadId}/messages`;
+
+    let headers = {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v1'
+    };
+
+    let payload = {
+      "role": "user",
+      "content": message
+    };
+
+    let options = {
+      'method': 'post',
+      'headers': headers,
+      'payload': JSON.stringify(payload)
+    };
+
+    let response = UrlFetchApp.fetch(url, options);
+
+    let result = JSON.parse(response);
+    let messageId = result.id;
+
+    return messageId;
+  } catch (error) {
+    console.error(`Error in adding message to thread ID: ${assistantThreadId}:`, error);
+  }
+}
+
+/**
+ * Checks is there connection of email thread and assistant thread in properties
+ * 
+ * @param {string} emailThreadId - email thread id.
+ * @returns {string} - assistant thread id.
+ */
+const getAssistantThreadId = (emailThreadId) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const settingsThreadIds = settings.threadIds;
+
+  let assistantThread = null
+
+  for (let object of settingsThreadIds) {
+    let key = Object.keys(object)[0];
+    if (key === emailThreadId) {
+      assistantThread = object[key];
+      break;
+    }
+  }
+
+  if (assistantThread === null) {
+    let newAssistantThreadId = createNewThread();
+    let newThreadIds = [{ [emailThreadId]: newAssistantThreadId }];
+    settingsThreadIds.push(...newThreadIds)
+    let updatedSettings = {
+      ...settings,
+      threadIds: settingsThreadIds
+    }
+
+    saveSettings(updatedSettings);
+
+    return newAssistantThreadId;
   } else {
-    console.log("There is no new email")
+    return assistantThread
   }
-
-  console.log("getUnreadMessages was executed successfully");
-  msgs = "";
-};
-
-const replyUnreadMessages = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let currentTimestamp = getCurrentTimeStamp()
-
-  const previousCheckDate = settings.checkTimeStamp;
-
-  const searchQuery = `is:unread after:${previousCheckDate}`;
-  console.log(searchQuery)
-  const searchedThreads = GmailApp.search(searchQuery);
-
-  searchedThreads.forEach((thread) => {
-    let messages = thread.getMessages();
-
-    messages.forEach((message) => {
-
-      message.reply("Got your email, Lancelot!")
-    });
-  });
-
-  const updatedSettings = {
-    ...settings,
-    checkTimeStamp: currentTimestamp,
-  };
-
-  saveSettings(updatedSettings);
-
-  console.log("replyUnreadMessages was executed successfully");
-};
-
-const sendFileTG = (file) => {
-  let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
-
-  let data = {
-    'chat_id': '1265546870',
-    'document': file
-  };
-
-  let options = {
-    'method': 'POST',
-    'payload': data,
-  };
-
-  UrlFetchApp.fetch(url, options);
-
-  console.log("sent")
 }
 
+/**
+ * Saves settings to user properties
+ * 
+ * @param {object} settings - settings object.
+ */
 const saveSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
@@ -175,6 +318,12 @@ const saveSettings = (settings) => {
   }
 };
 
+/**
+ * summirizes all emails and create template email
+ * 
+ * @param {string} input - all emails.
+ * @returns {string} - summarized template.
+ */
 const summarization = (input) => {
   const url = "https://api.openai.com/v1/chat/completions";
 
@@ -222,6 +371,11 @@ const summarization = (input) => {
   return summarizedText;
 };
 
+/**
+ * Gets all emails, summirize them and creates file
+ * 
+ * @returns {string} - summarized template email file.
+ */
 const getAllMessagesFile = () => {
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
@@ -255,6 +409,11 @@ const getAllMessagesFile = () => {
   return blobDoc;
 }
 
+/**
+ * Uploads file to OpenAI
+ * 
+ * @returns {integer} - uploaded file id.
+ */
 const getUploadedFileId = () => {
   let url = "https://api.openai.com/v1/files"
   let messagesFile = getAllMessagesFile()
@@ -280,6 +439,11 @@ const getUploadedFileId = () => {
   return fileId;
 }
 
+/**
+ * Creates assistant in OpenAI
+ * @param {string} fileId - base file for creating assistant.
+ * @returns {integer} - create assistant id.
+ */
 const getCreatedAssistantId = (fileId) => {
   let url = "https://api.openai.com/v1/assistants"
 
@@ -312,11 +476,17 @@ const getCreatedAssistantId = (fileId) => {
   return assistantId
 }
 
+/**
+ * Refreshes card
+ */
 const refreshCard = () => {
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 }
 
+/**
+ * Installs time driven trigger to answer emails automatically every hour
+ */
 const installTimeDrivenTrigger = () => {
   const triggers = ScriptApp.getProjectTriggers();
   let timeDrivenTriggerExists = false;
@@ -329,13 +499,16 @@ const installTimeDrivenTrigger = () => {
   }
 
   if (!timeDrivenTriggerExists) {
-    ScriptApp.newTrigger("getUnreadMessages")
+    ScriptApp.newTrigger("replyUnredMessages")
       .timeBased()
       .everyHours(1)
       .create();
   }
 };
 
+/**
+ * Runs two functions getUploadedFileId and getCreatedAssistantId, then creates assistant and saves all stuff in properties.
+ */
 const createAssistant = () => {
   let threeDaysAgoTimestamp = getTimestampThreeDaysAgo();
 
@@ -347,17 +520,21 @@ const createAssistant = () => {
       fileId: fileId,
       assistantId: assistantId,
       isAssistantCreated: true,
+      threadIds: [],
       checkTimeStamp: threeDaysAgoTimestamp
     };
 
     saveSettings(settings);
     refreshCard();
-    installTimeDrivenTrigger();
+    // installTimeDrivenTrigger();
   } catch (error) {
     console.error("Error creating assistant:", error);
   }
 };
 
+/**
+ * Deletes assistant and file
+ */
 const deleteAssistantAndFile = () => {
   // getting user properties:
   const userProperties = PropertiesService.getUserProperties();
@@ -418,6 +595,9 @@ const deleteAssistantAndFile = () => {
   refreshCard();
 }
 
+/**
+ * Creates sidebar in Gmail
+ */
 const runAddon = () => {
   let userProperties = PropertiesService.getUserProperties()
   let settingsTemp = userProperties.getProperty("settingsAPB")
