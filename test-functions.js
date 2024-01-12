@@ -1,4 +1,3 @@
-
 const clearSettings = () => {
   let updatedSettings = {
     fileId: "",

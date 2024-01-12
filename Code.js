@@ -2,6 +2,7 @@ const ADDON_TITLE = "Email GPT support";
 const API_KEY = "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";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
+const PAST_TIME_STAMP_DAYS = 3
 
 /**
  * Gets current time stamp
@@ -19,13 +20,15 @@ const getCurrentTimeStamp = () => {
  *
  * @returns {integer} - three days ago time stamp.
  */
-const getTimestampThreeDaysAgo = () => {
-  const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+const getPastTimeStamp = () => {
+  const newDate = new Date();
+  newDate.setDate(newDate.getDate() - PAST_TIME_STAMP_DAYS);
 
-  const timestampThreeDaysAgo = Math.floor(threeDaysAgo.getTime() / 1000);
+  const pastTimeStamp = Math.floor(newDate.getTime() / 1000);
 
-  return timestampThreeDaysAgo;
+  console.log(pastTimeStamp)
+
+  return pastTimeStamp;
 }
 
 /**
@@ -325,23 +328,24 @@ const saveSettings = (settings) => {
  * @returns {string} - summarized template.
  */
 const summarization = (input) => {
-  const url = "https://api.openai.com/v1/chat/completions";
+  try {
+    const url = "https://api.openai.com/v1/chat/completions";
 
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${API_KEY}`,
-  };
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${API_KEY}`,
+    };
 
-  const options = {
-    headers,
-    method: "GET",
-    muteHttpExceptions: true,
-    payload: JSON.stringify({
-      model: "gpt-4-1106-preview", // gpt-3.5-turbo
-      messages: [
-        {
-          role: "system",
-          content: `
+    const options = {
+      headers,
+      method: "GET",
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        model: "gpt-4-1106-preview", // gpt-3.5-turbo
+        messages: [
+          {
+            role: "system",
+            content: `
             1. Review the emails to understand their content.
             2. Determine the main purpose or topic of each.
             3. Note common elements in structure, tone, and phrases.
@@ -353,22 +357,25 @@ const summarization = (input) => {
 
             Avoid including any sensitive or personal information in the template.
           `,
-        },
-        {
-          role: "user",
-          content: input,
-        },
-      ],
-      temperature: 0,
-    }),
-  };
+          },
+          {
+            role: "user",
+            content: input,
+          },
+        ],
+        temperature: 0,
+      }),
+    };
 
-  const response = JSON.parse(
-    UrlFetchApp.fetch(url, options).getContentText(),
-  );
+    const response = JSON.parse(
+      UrlFetchApp.fetch(url, options).getContentText(),
+    );
 
-  let summarizedText = response.choices[0].message.content
-  return summarizedText;
+    let summarizedText = response.choices[0].message.content;
+    return summarizedText;
+  } catch (error) {
+    console.error("Error in summarization:", error);
+  }
 };
 
 /**
@@ -415,28 +422,32 @@ const getAllMessagesFile = () => {
  * @returns {integer} - uploaded file id.
  */
 const getUploadedFileId = () => {
-  let url = "https://api.openai.com/v1/files"
-  let messagesFile = getAllMessagesFile()
+  try {
+    let url = "https://api.openai.com/v1/files";
+    let messagesFile = getAllMessagesFile();
 
-  let headers = {
-    Authorization: `Bearer ${API_KEY}`
+    let headers = {
+      Authorization: `Bearer ${API_KEY}`,
+    };
+
+    let payload = {
+      purpose: "assistants",
+      file: messagesFile,
+    };
+
+    let response = UrlFetchApp.fetch(url, {
+      method: "post",
+      payload: payload,
+      headers: headers,
+    });
+
+    let result = JSON.parse(response);
+    let fileId = result.id;
+
+    return fileId;
+  } catch (error) {
+    console.error("Error in uploading file", error);
   }
-
-  let payload = {
-    purpose: "assistants",
-    file: messagesFile
-  }
-
-  let response = UrlFetchApp.fetch(url, {
-    method: "post",
-    payload: payload,
-    headers: headers
-  });
-
-  let result = JSON.parse(response)
-  let fileId = result.id
-
-  return fileId;
 }
 
 /**
@@ -445,35 +456,39 @@ const getUploadedFileId = () => {
  * @returns {integer} - create assistant id.
  */
 const getCreatedAssistantId = (fileId) => {
-  let url = "https://api.openai.com/v1/assistants"
+  try {
+    let url = "https://api.openai.com/v1/assistants";
 
-  let headers = {
-    Authorization: `Bearer ${API_KEY}`,
-    "Content-Type": "application/json",
-    "OpenAI-Beta": "assistants=v1"
-  };
+    let headers = {
+      Authorization: `Bearer ${API_KEY}`,
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "assistants=v1",
+    };
 
-  let payload = {
-    name: `${USERNAME}-assistant`,
-    description: `Support bot of ${USERNAME}`,
-    instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.",
-    tools: [{ "type": "retrieval" }],
-    model: "gpt-4-1106-preview",
-    file_ids: [`${fileId}`]
-  };
+    let payload = {
+      name: `${USERNAME}-assistant`,
+      description: `Support bot of ${USERNAME}`,
+      instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.",
+      tools: [{ "type": "retrieval" }],
+      model: "gpt-4-1106-preview",
+      file_ids: [`${fileId}`],
+    };
 
-  let payloadJson = JSON.stringify(payload);
+    let payloadJson = JSON.stringify(payload);
 
-  let response = UrlFetchApp.fetch(url, {
-    method: "post",
-    payload: payloadJson,
-    headers: headers
-  });
+    let response = UrlFetchApp.fetch(url, {
+      method: "post",
+      payload: payloadJson,
+      headers: headers,
+    });
 
-  let result = JSON.parse(response)
-  assistantId = result.id
+    let result = JSON.parse(response);
+    assistantId = result.id;
 
-  return assistantId
+    return assistantId;
+  } catch (error) {
+    console.error("Error in creating assistant", error);
+  }
 }
 
 /**
@@ -510,7 +525,7 @@ const installTimeDrivenTrigger = () => {
  * Runs two functions getUploadedFileId and getCreatedAssistantId, then creates assistant and saves all stuff in properties.
  */
 const createAssistant = () => {
-  let threeDaysAgoTimestamp = getTimestampThreeDaysAgo();
+  let pastTimeStamp = getPastTimeStamp();
 
   try {
     let fileId = getUploadedFileId();
@@ -521,14 +536,14 @@ const createAssistant = () => {
       assistantId: assistantId,
       isAssistantCreated: true,
       threadIds: [],
-      checkTimeStamp: threeDaysAgoTimestamp
+      checkTimeStamp: pastTimeStamp
     };
 
     saveSettings(settings);
     refreshCard();
     // installTimeDrivenTrigger();
   } catch (error) {
-    console.error("Error creating assistant:", error);
+    console.error("Error in creating assistant and file:", error);
   }
 };
 
