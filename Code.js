@@ -26,8 +26,6 @@ const getPastTimeStamp = () => {
 
   const pastTimeStamp = Math.floor(newDate.getTime() / 1000);
 
-  console.log(pastTimeStamp)
-
   return pastTimeStamp;
 }
 
@@ -160,12 +158,13 @@ const replyUnredMessages = () => {
     let lastMessage = messages[messageCount - 1];
 
     let threadId = thread.getId();
-    let message = lastMessage.getRawContent();
+    let message = lastMessage.getPlainBody();
+    let formattedMessage = message.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
 
     let assistantResponse = null;
 
     let assistantThreadId = getAssistantThreadId(threadId);
-    addMessageToAssistantThread(assistantThreadId, message);
+    addMessageToAssistantThread(assistantThreadId, formattedMessage);
     let runId = runAssistantThread(assistantThreadId);
 
     let runStatus;
@@ -384,29 +383,40 @@ const summarization = (input) => {
  * @returns {string} - summarized template email file.
  */
 const getAllMessagesFile = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let threadNumberLimit = settings.emailsLimit;
+
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
 
-  for (let i = 0; i < threads.length; i++) {
+  for (let i = 0; i <= threadNumberLimit; i++) {
     let threadId = threads[i].getId();
 
-    let thread = GmailApp.getThreadById(threadId)
-    let threadSubject = thread.getFirstMessageSubject()
-    let threadMessages = thread.getMessages()
+    let thread = GmailApp.getThreadById(threadId);
+    let threadMessagesNumber = thread.getMessageCount();
+    let threadSubject = thread.getFirstMessageSubject();
 
-    let allThreadMessages = ""
+    let allThreadMessages = "";
 
-    for (let i = 0; i < threadMessages.length; i++) {
-      let threadMessage = threadMessages[i]
-      let messageText = threadMessage.getPlainBody()
+    if (threadMessagesNumber === 1) {
+      break;
+    } else {
+      let threadMessages = thread.getMessages();
 
-      let formattedMessage = messageText.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
-      allThreadMessages += formattedMessage
+      for (let j = 0; j < threadMessages.length; j++) {
+        let threadMessage = threadMessages[j];
+        let messageText = threadMessage.getPlainBody();
+
+        let formattedMessage = messageText.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
+        allThreadMessages += formattedMessage;
+      }
+
+      allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
+
+      allThreadMessages = "";
     }
-
-    allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
-
-    allThreadMessages = "";
   }
 
   let summarizedMessages = summarization(allMessages)
@@ -536,6 +546,7 @@ const createAssistant = () => {
       assistantId: assistantId,
       isAssistantCreated: true,
       threadIds: [],
+      emailsLimit: 0,
       checkTimeStamp: pastTimeStamp
     };
 
@@ -610,44 +621,62 @@ const deleteAssistantAndFile = () => {
   refreshCard();
 }
 
+const setScrappingLimit = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  
+  let inputValue = e.formInput.emails_limit_input
+
+  let updatedSettings = {
+    ...settings,
+    emailsLimit: inputValue
+  }
+
+  saveSettings(updatedSettings)
+};
+
 /**
  * Creates sidebar in Gmail
  */
+
 const runAddon = () => {
   let userProperties = PropertiesService.getUserProperties()
   let settingsTemp = userProperties.getProperty("settingsAPB")
   let settings = JSON.parse(settingsTemp)
 
-  let isAssistantCreated = settings.isAssistantCreated
+  let emailsLimit = settings.emailsLimit
 
-  let createAction = CardService.newAction().setFunctionName('createAssistant');
-  let deleteAction = CardService.newAction().setFunctionName('deleteAssistantAndFile');
+  let setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
 
   let cardSection = CardService.newCardSection()
-    .setHeader("Section header");
 
-  if (!isAssistantCreated) {
-    let createButton = CardService.newTextButton()
-      .setText("Create assistant")
-      .setOnClickAction(createAction);
+  if (emailsLimit) {
+    let limitInput = CardService.newTextInput()
+      .setFieldName("emails_limit_input")
+      .setTitle("Enter emails limit")
+      .setHint("by default it is 1000")
+      .setValue(`${emailsLimit}`);
 
-    cardSection.addWidget(createButton);
+    cardSection.addWidget(limitInput);
   } else {
-    let deleteButton = CardService.newTextButton()
-      .setText("Delete assistant")
-      .setOnClickAction(deleteAction);
+    let limitInput = CardService.newTextInput()
+      .setFieldName("emails_limit_input")
+      .setTitle("Enter emails limit")
+      .setHint("by default it is 1000")
+      .setValue(`${emailsLimit}`);
 
-    cardSection.addWidget(deleteButton);
+    cardSection.addWidget(limitInput);
   }
 
-  let textParagraph = CardService.newTextParagraph()
-    .setText("This is some informative text.");
+  let setLimitButton = CardService.newTextButton()
+    .setText("Set limit")
+    .setOnClickAction(setScrappingLimitAction);
 
-  cardSection.addWidget(textParagraph);
+  cardSection.addWidget(setLimitButton);
 
   let card = CardService.newCardBuilder()
     .setName("Beta gmail support")
-    .setHeader(CardService.newCardHeader().setTitle("Buttons:"))
+    .setHeader(CardService.newCardHeader().setTitle("Actions:"))
     .addSection(cardSection)
     .build();
 
