@@ -1,3 +1,10 @@
+const deleteUserProperties = () => {
+  var userProperties = PropertiesService.getUserProperties();
+  userProperties.deleteAllProperties();
+
+  console.log("All properties were deleted")
+}
+
 const resetSettings = () => {
   let pastTimestamp = getPastTimeStamp();
   let updatedSettings = {
@@ -6,6 +13,9 @@ const resetSettings = () => {
     isAssistantCreated: false,
     threadIds: [],
     emailsLimit: 1000,
+    docsFileId: "",
+    docsFileLink: "",
+    lastUpdatedDate: "",
     checkTimeStamp: pastTimestamp
   };
 

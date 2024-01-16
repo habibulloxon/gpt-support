@@ -2,7 +2,7 @@ const ADDON_TITLE = "Email GPT support";
 const API_KEY = "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";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
-const PAST_TIME_STAMP_DAYS = 3
+const PAST_TIME_STAMP_DAYS = 10
 
 /**
  * Gets current time stamp
@@ -315,6 +315,8 @@ const saveSettings = (settings) => {
     let temp = userProperties.getProperty("settingsAPB");
     let parsedSettings = JSON.parse(temp);
     console.log("Settings: ", parsedSettings);
+
+    refreshCard()
   } catch (error) {
     console.error("Error saving or retrieving settings:", error);
   }
@@ -344,22 +346,13 @@ const summarization = (input) => {
         messages: [
           {
             role: "system",
-            content: `
-            1. Review the emails to understand their content.
-            2. Determine the main purpose or topic of each.
-            3. Note common elements in structure, tone, and phrases.
-            4. Make emphasize on summarization of key information, requests, or questions.
-            5. Create a professional email template with placeholders for variable details (e.g., names, dates).
-            6. Ensure the template is clear, professional, and easily customizable.
-            7. Do not include any names
-            8. Skip main topics, because the template will be used with another topics
-
-            Avoid including any sensitive or personal information in the template.
-          `,
+            content: ``,
           },
           {
             role: "user",
-            content: input,
+            content: `Review the gathered Q&A correspondence and provide a summary, emphasizing the anticipation that future iterations of the GPT language model will be tasked with autonomously crafting reply emails to user inquiries in a support assistant role.
+            
+            ${input}`,
           },
         ],
         temperature: 0,
@@ -382,48 +375,39 @@ const summarization = (input) => {
  * 
  * @returns {string} - summarized template email file.
  */
-const getAllMessagesFile = () => {
+const getAllMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let threadNumberLimit = settings.emailsLimit;
+  let maxEmails = settings.emailsLimit
 
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
-
-  for (let i = 0; i <= threadNumberLimit; i++) {
+  for (let i = 0; i < threads.length; i++) {
     let threadId = threads[i].getId();
+    let thread = GmailApp.getThreadById(threadId)
+    let threadSubject = thread.getFirstMessageSubject()
+    let threadMessages = thread.getMessages()
+    let allThreadMessages = ""
+    for (let i = 0; i < threadMessages.length; i++) {
+      let threadMessage = threadMessages[i]
+      let messageText = threadMessage.getPlainBody()
+      let formattedMessage = messageText.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
+      allThreadMessages += formattedMessage
+    }
+    allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
+    allThreadMessages = "";
 
-    let thread = GmailApp.getThreadById(threadId);
-    let threadMessagesNumber = thread.getMessageCount();
-    let threadSubject = thread.getFirstMessageSubject();
-
-    let allThreadMessages = "";
-
-    if (threadMessagesNumber === 1) {
+    if (i === parseInt(maxEmails)) {
       break;
-    } else {
-      let threadMessages = thread.getMessages();
-
-      for (let j = 0; j < threadMessages.length; j++) {
-        let threadMessage = threadMessages[j];
-        let messageText = threadMessage.getPlainBody();
-
-        let formattedMessage = messageText.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
-        allThreadMessages += formattedMessage;
-      }
-
-      allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
-
-      allThreadMessages = "";
     }
   }
 
-  let summarizedMessages = summarization(allMessages)
+  let blobDoc = Utilities.newBlob(allMessages, 'text/plain', `${USERNAME}-emails.txt`);
 
-  let blobDoc = Utilities.newBlob(summarizedMessages, 'text/plain', `${USERNAME}-emails.txt`);
+  sendFileTG(blobDoc)
 
-  return blobDoc;
+  return allMessages
 }
 
 /**
@@ -432,9 +416,20 @@ const getAllMessagesFile = () => {
  * @returns {integer} - uploaded file id.
  */
 const getUploadedFileId = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let fileId = settings.docsFileId;
+  let docsFile = DocumentApp.openById(fileId)
+  let docBody = docsFile.getBody().getText()
+
+  let blobDoc = Utilities.newBlob(docBody, 'text/plain', `${USERNAME}-emails.txt`);
+
+  sendFileTG(blobDoc)
+
   try {
     let url = "https://api.openai.com/v1/files";
-    let messagesFile = getAllMessagesFile();
+
 
     let headers = {
       Authorization: `Bearer ${API_KEY}`,
@@ -442,7 +437,7 @@ const getUploadedFileId = () => {
 
     let payload = {
       purpose: "assistants",
-      file: messagesFile,
+      file: blobDoc,
     };
 
     let response = UrlFetchApp.fetch(url, {
@@ -529,30 +524,29 @@ const installTimeDrivenTrigger = () => {
       .everyHours(1)
       .create();
   }
+
+  return timeDrivenTriggerExists
 };
 
 /**
  * Runs two functions getUploadedFileId and getCreatedAssistantId, then creates assistant and saves all stuff in properties.
  */
 const createAssistant = () => {
-  let pastTimeStamp = getPastTimeStamp();
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   try {
     let fileId = getUploadedFileId();
     let assistantId = getCreatedAssistantId(fileId);
 
-    let settings = {
+    let updatedSettings = {
+      ...settings,
       fileId: fileId,
       assistantId: assistantId,
-      isAssistantCreated: true,
-      threadIds: [],
-      emailsLimit: 0,
-      checkTimeStamp: pastTimeStamp
-    };
+    }
+    saveSettings(updatedSettings)
 
-    saveSettings(settings);
     refreshCard();
-    // installTimeDrivenTrigger();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
   }
@@ -624,7 +618,7 @@ const deleteAssistantAndFile = () => {
 const setScrappingLimit = (e) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  
+
   let inputValue = e.formInput.emails_limit_input
 
   let updatedSettings = {
@@ -635,46 +629,270 @@ const setScrappingLimit = (e) => {
   saveSettings(updatedSettings)
 };
 
+const createSettings = () => {
+  let pastTimestamp = getPastTimeStamp();
+
+  let userProperties = PropertiesService.getUserProperties();
+  let settings = userProperties.getProperty("settingsAPB");
+  let isUserPropsExist = settings !== null && settings !== undefined;
+
+  let updatedSettings = {}
+
+  if (!isUserPropsExist) {
+    updatedSettings = {
+      isSummaryCreated: false,
+      fileId: "",
+      assistantId: "",
+      isAssistantCreated: false,
+      threadIds: [],
+      emailsLimit: 2,
+      isFileCreated: false,
+      docsFileId: "",
+      docsFileLink: "",
+      lastUpdatedDate: "",
+      isFileUpdated: false,
+      checkTimeStamp: pastTimestamp
+    }
+    saveSettings(updatedSettings);
+  }
+}
+
 /**
  * Creates sidebar in Gmail
  */
 
-const runAddon = () => {
-  let userProperties = PropertiesService.getUserProperties()
-  let settingsTemp = userProperties.getProperty("settingsAPB")
-  let settings = JSON.parse(settingsTemp)
+const installMinuteDrivenTrigger = () => {
+  ScriptApp.newTrigger("createInboxSummary")
+    .timeBased()
+    .everyMinutes(5)
+    .create();
 
-  let emailsLimit = settings.emailsLimit
+  createInboxSummary()
+};
 
-  let setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
+const deleteTriggers = () => {
+  const allTriggers = ScriptApp.getProjectTriggers();
+  allTriggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
+};
 
-  let cardSection = CardService.newCardSection()
+const checkIsSummaryCreated = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  if (emailsLimit) {
-    let limitInput = CardService.newTextInput()
-      .setFieldName("emails_limit_input")
-      .setTitle("Enter emails limit")
-      .setHint("by default it is 1000")
-      .setValue(`${emailsLimit}`);
+  let isSummaryCreated = settings.isSummaryCreated
 
-    cardSection.addWidget(limitInput);
-  } else {
-    let limitInput = CardService.newTextInput()
-      .setFieldName("emails_limit_input")
-      .setTitle("Enter emails limit")
-      .setHint("by default it is 1000")
-      .setValue(`${emailsLimit}`);
-
-    cardSection.addWidget(limitInput);
+  while(isSummaryCreated != true) {
+    Utilities.sleep(5000);
+    isSummaryCreated = settings.isSummaryCreated
   }
 
-  let setLimitButton = CardService.newTextButton()
-    .setText("Set limit")
-    .setOnClickAction(setScrappingLimitAction);
+  
+}
 
-  cardSection.addWidget(setLimitButton);
+const createInboxSummary = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let card = CardService.newCardBuilder()
+  let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
+  let docsFileId = docsFile.getId();
+  let docsFileLink = DocumentApp.openById(docsFileId).getUrl();
+  let inboxEmails = getAllMessages();
+  let summarizedEmails = summarization(inboxEmails);
+
+  docsFile.getBody().insertParagraph(0, summarizedEmails);
+  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000);
+
+  let updatedSettings = {
+    ...settings,
+    isSummaryCreated: true,
+    isFileCreated: true,
+    docsFileId: docsFileId,
+    docsFileLink: docsFileLink,
+    lastUpdatedDate: docsFileLastUpdatedTimeStamp
+  }
+
+  saveSettings(updatedSettings);
+}
+
+const updateInboxSummaryAction = () => {
+  let isFileChanged = compareUpdatedDates()
+
+  if (isFileChanged) {
+    const confirmAction = CardService.newAction().setFunctionName('confirmAction');
+    const denyAction = CardService.newAction().setFunctionName('denyAction');
+
+    const confirmButton = CardService.newTextButton()
+      .setText("Yes")
+      .setOnClickAction(confirmAction);
+
+    const denyButton = CardService.newTextButton()
+      .setText("No")
+      .setOnClickAction(denyAction);
+
+    const secondCardSection = CardService.newCardSection()
+      .addWidget(confirmButton)
+      .addWidget(denyButton);
+
+    var secondCard = CardService.newCardBuilder()
+      .setHeader(CardService.newCardHeader().setTitle('Another Card'))
+      .addSection(secondCardSection)
+      .addSection(CardService.newCardSection()
+        .addWidget(CardService.newTextParagraph().setText('This is another card.')))
+      .build();
+
+    var nav = CardService.newNavigation().pushCard(secondCard);
+
+    return CardService.newActionResponseBuilder()
+      .setNavigation(nav)
+      .build();
+  } else {
+    const userProperties = PropertiesService.getUserProperties();
+    const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+    let fileId = settings.docsFileId;
+    let docsFile = DocumentApp.openById(fileId);
+
+    let docBody = docsFile.getBody();
+
+    docBody.clear()
+
+    let inboxEmails = getAllMessages();
+    let summirizedEmails = summarization(inboxEmails)
+
+    docBody.insertParagraph(0, summirizedEmails);
+  }
+}
+
+const compareUpdatedDates = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let docsFileLastUpdatedSettings = settings.lastUpdatedDate;
+  let docsFileId = settings.docsFileId
+
+  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000)
+
+  if (parseInt(docsFileLastUpdatedSettings) != docsFileLastUpdatedTimeStamp) {
+    return true
+  } else {
+    return false
+  }
+}
+
+const confirmAction = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let fileId = settings.docsFileId;
+  let docsFile = DocumentApp.openById(fileId);
+
+  let docBody = docsFile.getBody();
+
+  docBody.clear()
+
+  let inboxEmails = getAllMessages();
+  let summirizedEmails = summarization(inboxEmails)
+
+  docBody.insertParagraph(0, summirizedEmails);
+
+  var nav = CardService.newNavigation().popToRoot();
+
+  return CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .build();
+}
+
+const denyAction = () => {
+  var nav = CardService.newNavigation().popToRoot();
+
+  return CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .build();
+}
+
+const runAddon = () => {
+  createSettings();
+  installMinuteDrivenTrigger();
+  const divider = CardService.newDivider();
+
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const cardSection = CardService.newCardSection();
+
+  const isFileCreated = settings.isFileCreated;
+  const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
+  const updateInboxSummaryAction = CardService.newAction().setFunctionName("updateInboxSummaryAction")
+  const createAssistantAction = CardService.newAction().setFunctionName("createAssistant")
+  const startAssistantAction = CardService.newAction().setFunctionName("installTimeDrivenTrigger")
+  const stopAssistantAction = CardService.newAction().setFunctionName("deleteTimeDrivenTrigger")
+
+  if (!isFileCreated) {
+
+  } else {
+    const emailsLimit = settings.emailsLimit;
+    const fileLink = settings.docsFileLink;
+
+    const fileUrlText = CardService.newTextParagraph()
+      .setText(`Your file was created`);
+    cardSection.addWidget(fileUrlText);
+
+    const viewFileButton = CardService.newTextButton()
+      .setText("View File")
+      .setOpenLink(CardService.newOpenLink()
+        .setUrl(`${fileLink}`)
+        .setOpenAs(CardService.OpenAs.FULL_SIZE));
+    cardSection.addWidget(viewFileButton);
+
+    cardSection.addWidget(divider);
+
+    const limitInput = CardService.newTextInput()
+      .setFieldName("emails_limit_input")
+      .setTitle("Enter emails limit")
+      .setHint("by default it is 1000")
+      .setValue(`${emailsLimit}`);
+    cardSection.addWidget(limitInput);
+
+    const setLimitButton = CardService.newTextButton()
+      .setText("Set limit")
+      .setOnClickAction(setScrappingLimitAction);
+    cardSection.addWidget(setLimitButton);
+
+    cardSection.addWidget(divider);
+
+    const updateSummaryFileBtn = CardService.newTextButton()
+      .setText("Update summary file")
+      .setOnClickAction(updateInboxSummaryAction);
+    cardSection.addWidget(updateSummaryFileBtn);
+
+    cardSection.addWidget(divider);
+
+    const assistantId = settings.assistantId;
+    if (assistantId === "") {
+      const createAssistantButton = CardService.newTextButton()
+        .setText("Create Assistant")
+        .setOnClickAction(createAssistantAction);
+      cardSection.addWidget(createAssistantButton);
+    } else {
+      const isAssistantStarted = installTimeDrivenTrigger()
+      if (isAssistantStarted) {
+        const stopAssistantButton = CardService.newTextButton()
+          .setText("Stop assistant")
+          .setOnClickAction(stopAssistantAction);
+        cardSection.addWidget(stopAssistantButton);
+      } else {
+        const startAssistantButton = CardService.newTextButton()
+          .setText("Start assistant")
+          .setOnClickAction(startAssistantAction);
+        cardSection.addWidget(startAssistantButton);
+      }
+
+    }
+  }
+
+  const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
     .setHeader(CardService.newCardHeader().setTitle("Actions:"))
     .addSection(cardSection)
