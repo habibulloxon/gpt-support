@@ -125,6 +125,7 @@ const createAssistant = () => {
       assistantId: assistantId,
     }
     saveSettings(updatedSettings)
+    installTimeDrivenTrigger()
     refreshCard();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
@@ -306,4 +307,68 @@ const getAssistantMessages = (threadId) => {
   } catch (error) {
     console.error(`Error in getting messages in thread ID: ${threadId}:`, error);
   }
+}
+
+/**
+ * Deletes assistant and file
+ */
+const deleteAssistantAndFile = () => {
+  // getting user properties:
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const fileId = settings.fileId
+  const assistantId = settings.assistantId
+
+  // url's to use
+  let fileUrl = `https://api.openai.com/v1/files/${fileId}`
+  let assistantUrl = `https://api.openai.com/v1/assistants/${assistantId}`
+
+  // headers and options for assistant:
+  const assistantHeaders = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${API_KEY}`,
+    "OpenAI-Beta": "assistants=v1"
+  };
+
+  const assistantOptions = {
+    "method": "delete",
+    "headers": assistantHeaders
+  };
+
+  // deleting assistant:
+  try {
+    UrlFetchApp.fetch(assistantUrl, assistantOptions)
+    console.log(`Assistant: ${assistantId} was deleted`)
+  } catch (error) {
+    console.error("Error in deleting assistant: ", error);
+  }
+
+  // headers and options for file:
+  const fileHeaders = {
+    "Authorization": `Bearer ${API_KEY}`
+  };
+
+  const fileOptions = {
+    "method": "delete",
+    "headers": fileHeaders
+  };
+
+  // deleting file:
+  try {
+    UrlFetchApp.fetch(fileUrl, fileOptions)
+    console.log(`File: ${fileId} was deleted`)
+  } catch (error) {
+    console.error("Error in deleting file: ", error);
+  }
+
+  let updatedSettings = {
+    fileId: "",
+    assistantId: "",
+    isAssistantCreated: false
+  };
+
+  saveSettings(updatedSettings);
+  deleteTriggers()
+  refreshCard();
 }

@@ -31,12 +31,13 @@ const createSettings = () => {
 
   if (!isUserPropsExist) {
     updatedSettings = {
-      isSummaryCreated: false,
+      summaryCreatingStatus: "idle",
+      summaryUpdatingStatus: "idle",
       fileId: "",
       assistantId: "",
       isAssistantCreated: false,
       threadIds: [],
-      emailsLimit: 2,
+      emailsLimit: 100,
       isFileCreated: false,
       docsFileId: "",
       docsFileLink: "",
@@ -45,5 +46,7 @@ const createSettings = () => {
       checkTimeStamp: pastTimestamp
     }
     saveSettings(updatedSettings);
+
+    console.log("Settings were created")
   }
 }

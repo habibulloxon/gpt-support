@@ -56,6 +56,9 @@ const getAllMessages = () => {
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
   for (let i = 0; i < threads.length; i++) {
+    if (i === parseInt(maxEmails)) {
+      break;
+    }
     let threadId = threads[i].getId();
     let thread = GmailApp.getThreadById(threadId)
     let threadSubject = thread.getFirstMessageSubject()
@@ -69,10 +72,6 @@ const getAllMessages = () => {
     }
     allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
     allThreadMessages = "";
-
-    if (i === parseInt(maxEmails)) {
-      break;
-    }
   }
 
   let blobDoc = Utilities.newBlob(allMessages, 'text/plain', `${USERNAME}-emails.txt`);
@@ -99,21 +98,51 @@ const compareUpdatedDates = () => {
   }
 }
 
-const checkIsSummaryCreated = () => {
+const retrieveSummaryCreationStatus = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  let isRunning = settings.summaryCreatingStatus
 
-  let isSummaryCreated = settings.isSummaryCreated
-
-  while(isSummaryCreated != true) {
-    Utilities.sleep(5000);
-    isSummaryCreated = settings.isSummaryCreated
-  }
+  return isRunning
 }
+
+const retrieveSummaryUpdateStatus = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  let isRunning = settings.summaryUpdatingStatus
+
+  return isRunning
+}
+
+const checkSummaryCreatingStatus = () => {
+  let runStatus;
+  while ((runStatus = retrieveSummaryCreationStatus()) !== "finished") {
+    if (runStatus === "running") {
+      Utilities.sleep(3000)
+    }
+  }
+
+  deleteTriggers()
+}
+
+const checkSummaryUpdateStatus = () => {
+  let runStatus;
+  while ((runStatus = retrieveSummaryUpdateStatus()) !== "finished") {
+    if (runStatus === "running") {
+      Utilities.sleep(3000)
+    }
+  }
+
+  deleteTriggers()
+}
+
 
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let temporarySettings = { ...settings, summaryCreatingStatus: "running" };
+  saveSettings(temporarySettings);
 
   let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
   let docsFileId = docsFile.getId();
@@ -127,11 +156,47 @@ const createInboxSummary = () => {
 
   let updatedSettings = {
     ...settings,
+    summaryCreatingStatus: "finished",
     isSummaryCreated: true,
     isFileCreated: true,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
     lastUpdatedDate: docsFileLastUpdatedTimeStamp
-  }
+  };
   saveSettings(updatedSettings);
-}
+};
+
+const updateInboxSummary = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let temporarySettings = { ...settings, summaryUpdatingStatus: "running" };
+  saveSettings(temporarySettings);
+
+  let docsFileId = settings.docsFileId;
+
+  let docsFile = DocumentApp.openById(docsFileId)
+  let docBody = docsFile.getBody()
+
+  docBody.clear()
+
+  let inboxEmails = getAllMessages()
+  let summarizedEmails = summarization(inboxEmails)
+
+  docBody.insertParagraph(0, summarizedEmails)
+  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000);
+
+  let updatedSettings = {
+    ...settings,
+    summaryUpdatingStatus: "finished",
+    lastUpdatedDate: docsFileLastUpdatedTimeStamp
+  };
+  saveSettings(updatedSettings);
+
+  var nav = CardService.newNavigation().popToRoot();
+
+  return CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .build();
+};

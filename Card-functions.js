@@ -3,6 +3,7 @@ const refreshCard = () => {
   return CardService.newNavigation().updateCard(card);
 }
 
+
 const setScrappingLimit = (e) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -18,26 +19,7 @@ const setScrappingLimit = (e) => {
 };
 
 const confirmAction = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let fileId = settings.docsFileId;
-  let docsFile = DocumentApp.openById(fileId);
-
-  let docBody = docsFile.getBody();
-
-  docBody.clear()
-
-  let inboxEmails = getAllMessages();
-  let summirizedEmails = summarization(inboxEmails)
-
-  docBody.insertParagraph(0, summirizedEmails);
-
-  var nav = CardService.newNavigation().popToRoot();
-
-  return CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .build();
+  installSummaryUpdateTriggers()
 }
 
 const denyAction = () => {
@@ -69,10 +51,10 @@ const updateInboxSummaryAction = () => {
       .addWidget(denyButton);
 
     var secondCard = CardService.newCardBuilder()
-      .setHeader(CardService.newCardHeader().setTitle('Another Card'))
+      .setHeader(CardService.newCardHeader().setTitle('Please confirm action'))
       .addSection(secondCardSection)
       .addSection(CardService.newCardSection()
-        .addWidget(CardService.newTextParagraph().setText('This is another card.')))
+        .addWidget(CardService.newTextParagraph().setText('You have changed original summary, do you want to override it?')))
       .build();
 
     var nav = CardService.newNavigation().pushCard(secondCard);
@@ -81,26 +63,12 @@ const updateInboxSummaryAction = () => {
       .setNavigation(nav)
       .build();
   } else {
-    const userProperties = PropertiesService.getUserProperties();
-    const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-    let fileId = settings.docsFileId;
-    let docsFile = DocumentApp.openById(fileId);
-
-    let docBody = docsFile.getBody();
-
-    docBody.clear()
-
-    let inboxEmails = getAllMessages();
-    let summirizedEmails = summarization(inboxEmails)
-
-    docBody.insertParagraph(0, summirizedEmails);
+    installSummaryUpdateTriggers()
   }
 }
 
 const runAddon = () => {
   createSettings();
-  installMinuteDrivenTrigger();
   const divider = CardService.newDivider();
 
   const userProperties = PropertiesService.getUserProperties();
@@ -109,14 +77,18 @@ const runAddon = () => {
   const cardSection = CardService.newCardSection();
 
   const isFileCreated = settings.isFileCreated;
+
   const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
+  const createInboxSummaryAction = CardService.newAction().setFunctionName('installSummaryCreationTriggers');
   const updateInboxSummaryAction = CardService.newAction().setFunctionName("updateInboxSummaryAction")
   const createAssistantAction = CardService.newAction().setFunctionName("createAssistant")
-  const startAssistantAction = CardService.newAction().setFunctionName("installTimeDrivenTrigger")
-  const stopAssistantAction = CardService.newAction().setFunctionName("deleteTimeDrivenTrigger")
+  const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
 
-  if (!isFileCreated) {
-
+  if (isFileCreated === false) {
+    const createFileButton = CardService.newTextButton()
+      .setText("Create summary")
+      .setOnClickAction(createInboxSummaryAction)
+    cardSection.addWidget(createFileButton)
   } else {
     const emailsLimit = settings.emailsLimit;
     const fileLink = settings.docsFileLink;
@@ -158,23 +130,14 @@ const runAddon = () => {
     const assistantId = settings.assistantId;
     if (assistantId === "") {
       const createAssistantButton = CardService.newTextButton()
-        .setText("Create Assistant")
+        .setText("Create and Start Assistant")
         .setOnClickAction(createAssistantAction);
       cardSection.addWidget(createAssistantButton);
     } else {
-      const isAssistantStarted = installTimeDrivenTrigger()
-      if (isAssistantStarted) {
-        const stopAssistantButton = CardService.newTextButton()
-          .setText("Stop assistant")
-          .setOnClickAction(stopAssistantAction);
-        cardSection.addWidget(stopAssistantButton);
-      } else {
-        const startAssistantButton = CardService.newTextButton()
-          .setText("Start assistant")
-          .setOnClickAction(startAssistantAction);
-        cardSection.addWidget(startAssistantButton);
-      }
-
+      const stopAssistantButton = CardService.newTextButton()
+        .setText("Delete and stop assistant")
+        .setOnClickAction(stopAssistantAction);
+      cardSection.addWidget(stopAssistantButton);
     }
   }
   const card = CardService.newCardBuilder()

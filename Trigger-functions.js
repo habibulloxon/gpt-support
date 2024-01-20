@@ -17,12 +17,33 @@ const installTimeDrivenTrigger = () => {
   return timeDrivenTriggerExists
 };
 
-const installMinuteDrivenTrigger = () => {
+const installSummaryCreationTriggers = () => {
   ScriptApp.newTrigger("createInboxSummary")
     .timeBased()
-    .at(new Date((getCurrentTimeStamp() + 1) * 1000 ))
+    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
+    .create();
+
+  ScriptApp.newTrigger("checkSummaryCreatingStatus")
+    .timeBased()
+    .at(new Date((getCurrentTimeStamp() + 2) * 1000))
     .create();
 };
+
+const installSummaryUpdateTriggers = () => {
+  ScriptApp.newTrigger("updateInboxSummary")
+    .timeBased()
+    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
+    .create();
+
+  ScriptApp.newTrigger("checkSummaryUpdateStatus")
+    .timeBased()
+    .at(new Date((getCurrentTimeStamp() + 3) * 1000))
+    .create();
+};
+
+function test() {
+  console.log(new Date((getCurrentTimeStamp() + 1) * 1000))
+}
 
 const deleteTriggers = () => {
   const allTriggers = ScriptApp.getProjectTriggers();
