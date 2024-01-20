@@ -177,8 +177,8 @@ const getAssistantThreadId = (emailThreadId) => {
   }
   if (assistantThread === null) {
     let newAssistantThreadId = createNewThread();
-    let newThreadIds = [{ [emailThreadId]: newAssistantThreadId }];
-    settingsThreadIds.push(...newThreadIds)
+    let newThreadIds = { [emailThreadId]: newAssistantThreadId };
+    settingsThreadIds.push(newThreadIds);
     let updatedSettings = {
       ...settings,
       threadIds: settingsThreadIds
@@ -186,7 +186,7 @@ const getAssistantThreadId = (emailThreadId) => {
     saveSettings(updatedSettings);
     return newAssistantThreadId;
   } else {
-    return assistantThread
+    return assistantThread;
   }
 }
 

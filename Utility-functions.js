@@ -5,6 +5,11 @@ const deleteUserProperties = () => {
   console.log("All properties were deleted")
 }
 
+function test() {
+  var firstThread = GmailApp.getInboxThreads(0,1)[0];
+  firstThread.markRead();
+}
+
 function getSettingsToConsole() {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));

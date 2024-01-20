@@ -38,6 +38,7 @@ const replyUnredMessages = () => {
     assistantResponse = getAssistantMessages(assistantThreadId);
 
     lastMessage.reply(assistantResponse)
+    thread.markRead()
   });
 
   const updatedSettings = {
