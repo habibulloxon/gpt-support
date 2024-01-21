@@ -5,12 +5,21 @@ const deleteUserProperties = () => {
   console.log("All properties were deleted")
 }
 
-function test() {
+function sendEmail() {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let fileLink = settings.docsFileLink
+
   const email = Session.getActiveUser().getEmail();
   const subject = `${ADDON_TITLE} - summary created`;
   const template = HtmlService.createTemplateFromFile("notification");
 
   let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
+
+  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
 
   MailApp.sendEmail({
     to: email,
@@ -67,6 +76,7 @@ function logText() {
 function handleClick() {
   var actionResponse = loadingCard();
 
+  installSummaryCreationTriggers()
 
   return actionResponse;
 }
@@ -102,39 +112,25 @@ function testCard() {
 }
 
 function loadingCard() {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let textToDisplay = settings.fileId;
-
   const loadingCardSection = CardService.newCardSection();
 
-  if (textToDisplay === "") {
-    const loadingText = CardService.newTextParagraph()
-      .setText("Loading...");
-    loadingCardSection.addWidget(loadingText);
-  } else {
-    const text = CardService.newTextParagraph()
-      .setText(`${textToDisplay}`);
-    loadingCardSection.addWidget(text);
-  }
-
-  const handleClickAction = CardService.newAction().setFunctionName("goToRootCard");
-
-  const button = CardService.newTextButton()
-    .setText("Go to root")
-    .setOnClickAction(handleClickAction);
-  loadingCardSection.addWidget(button);
+  const loadingText = CardService.newTextParagraph()
+    .setText("Your inbox summary is creating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  loadingCardSection.addWidget(loadingText);
 
   const loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Loading Card'))
+    .setHeader(CardService.newCardHeader().setTitle('Creation is in progress'))
     .addSection(loadingCardSection)
     .build();
 
   let nav = CardService.newNavigation().pushCard(loadingCard);
 
+  let notification = CardService.newNotification()
+    .setText("Your inbox summary is creating...");
+
   var actionResponse = CardService.newActionResponseBuilder()
     .setNavigation(nav)
+    .setNotification(notification)
     .build();
 
   return actionResponse;

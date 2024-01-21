@@ -91,7 +91,7 @@ const getCreatedAssistantId = (fileId) => {
     let payload = {
       name: `${USERNAME}-assistant`,
       description: `Support bot of ${USERNAME}`,
-      instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.",
+      instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file. Do not include anything in the end of an email",
       tools: [{ "type": "retrieval" }],
       model: "gpt-4-1106-preview",
       file_ids: [`${fileId}`],

@@ -9,6 +9,12 @@ const formatMessageSender = (str) => {
   return contentBeforeAngleBracket.replace(/"/g, '');
 }
 
+const formatAssistantResponse = (inputString) => {
+  let outputString = inputString.replace(/【.*?】/g, "");
+
+  return outputString
+}
+
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -46,7 +52,9 @@ const replyUnredMessages = () => {
 
     assistantResponse = getAssistantMessages(assistantThreadId);
 
-    lastMessage.reply(assistantResponse)
+    let formattedAssistantResponse = formatAssistantResponse(assistantResponse)
+
+    lastMessage.reply(formattedAssistantResponse)
     thread.markRead()
   });
 
@@ -176,6 +184,8 @@ const createInboxSummary = () => {
     lastUpdatedDate: docsFileLastUpdatedTimeStamp
   };
   saveSettings(updatedSettings);
+
+  sendEmail()
 };
 
 const updateInboxSummary = () => {

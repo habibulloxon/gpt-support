@@ -79,7 +79,7 @@ const runAddon = () => {
   const isFileCreated = settings.isFileCreated;
 
   const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
-  const createInboxSummaryAction = CardService.newAction().setFunctionName('installSummaryCreationTriggers');
+  const createInboxSummaryAction = CardService.newAction().setFunctionName('handleClick');
   const updateInboxSummaryAction = CardService.newAction().setFunctionName("updateInboxSummaryAction")
   const createAssistantAction = CardService.newAction().setFunctionName("createAssistant")
   const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
