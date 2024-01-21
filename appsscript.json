@@ -10,7 +10,7 @@
     },
     "gmail": {
       "homepageTrigger": {
-        "runFunction": "runAddon"
+        "runFunction": "testCard"
       }
     }
   }

@@ -6,9 +6,20 @@ const deleteUserProperties = () => {
 }
 
 function test() {
-  var userDisplayName = getOwnName()
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - summary created`;
+  const template = HtmlService.createTemplateFromFile("notification");
 
-  console.log(userDisplayName)
+  let htmlOutput = template.evaluate().getContent();
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!")
 }
 
 function getSettingsToConsole() {
@@ -55,16 +66,6 @@ function logText() {
 
 function handleClick() {
   var actionResponse = loadingCard();
-
-  ScriptApp.newTrigger('logText')
-    .timeBased()
-    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
-    .create();
-
-  ScriptApp.newTrigger('goToRootCard')
-    .timeBased()
-    .at(new Date((getCurrentTimeStamp() + 2) * 1000))
-    .create();
 
 
   return actionResponse;
