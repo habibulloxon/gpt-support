@@ -228,7 +228,7 @@ const addMessageToAssistantThread = (assistantThreadId, message) => {
  * @param {string} threadId - assistant thread id
  * @returns {integer} - run id.
  */
-const runAssistantThread = (threadId) => {
+const runAssistantThread = (threadId, user) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
   const assistantId = settings.assistantId
@@ -240,7 +240,8 @@ const runAssistantThread = (threadId) => {
       'OpenAI-Beta': 'assistants=v1'
     };
     let payload = {
-      'assistant_id': assistantId
+      'assistant_id': assistantId,
+      'additional_instructions': `Please address the user as ${user}.`,
     };
     let options = {
       'method': 'post',

@@ -6,8 +6,9 @@ const deleteUserProperties = () => {
 }
 
 function test() {
-  var firstThread = GmailApp.getInboxThreads(0,1)[0];
-  firstThread.markRead();
+  var userDisplayName = getOwnName()
+
+  console.log(userDisplayName)
 }
 
 function getSettingsToConsole() {

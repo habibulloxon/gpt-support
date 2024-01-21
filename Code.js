@@ -3,6 +3,12 @@ const API_KEY = "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";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
 
+const formatMessageSender = (str) => {
+  const parts = str.split('<');
+  const contentBeforeAngleBracket = parts[0].trim();
+  return contentBeforeAngleBracket.replace(/"/g, '');
+}
+
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -17,6 +23,9 @@ const replyUnredMessages = () => {
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
+    let lastMessageSender = lastMessage.getFrom()
+
+    let formattedMessageSender = formatMessageSender(lastMessageSender)
 
     let threadId = thread.getId();
     let message = lastMessage.getPlainBody();
@@ -26,7 +35,7 @@ const replyUnredMessages = () => {
 
     let assistantThreadId = getAssistantThreadId(threadId);
     addMessageToAssistantThread(assistantThreadId, formattedMessage);
-    let runId = runAssistantThread(assistantThreadId);
+    let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
 
     let runStatus;
     while ((runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed") {
@@ -41,8 +50,10 @@ const replyUnredMessages = () => {
     thread.markRead()
   });
 
-  const updatedSettings = {
-    ...settings,
+  let newSettings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let updatedSettings = {
+    ...newSettings,
     checkTimeStamp: currentTimestamp,
   };
   saveSettings(updatedSettings);
