@@ -31,6 +31,20 @@ const setCompanyName = (e) => {
   saveSettings(updatedSettings)
 };
 
+const setApiKey = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let inputValue = e.formInput.apikey_input
+
+  let updatedSettings = {
+    ...settings,
+    openAiApiKey: inputValue
+  }
+
+  saveSettings(updatedSettings)
+};
+
 const confirmAction = () => {
   updateInboxSummaryRedirect()
 }
@@ -190,9 +204,11 @@ const runAddon = () => {
 
   const isFileCreated = settings.isFileCreated;
   const companyName = settings.companyName;
+  const openAiApiKey = settings.openAiApiKey;
 
   const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
   const setCompanyNameAction = CardService.newAction().setFunctionName('setCompanyName');
+  const setApiKeyAction = CardService.newAction().setFunctionName('setApiKey');
 
   const createInboxSummaryAction = CardService.newAction().setFunctionName('handleSummaryCreationClick');
   const updateInboxSummaryAction = CardService.newAction().setFunctionName("handleSummaryUpdateClick")
@@ -200,6 +216,27 @@ const runAddon = () => {
   const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
 
   if (isFileCreated === false) {
+    const apiKeyInput = CardService.newTextInput()
+      .setFieldName("apikey_input")
+      .setTitle("Enter Open AI api key")
+      .setValue(`${openAiApiKey}`);
+    cardSection.addWidget(apiKeyInput);
+
+    const setApiKeyButton = CardService.newTextButton()
+      .setText("Set API key")
+      .setOnClickAction(setApiKeyAction);
+    cardSection.addWidget(setApiKeyButton);
+
+    cardSection.addWidget(divider);
+
+    const tutorialText = CardService.newTextButton()
+      .setText("How to get API key?")
+      .setOpenLink(CardService.newOpenLink()
+        .setUrl("https://youtu.be/aVog4J6nIAU"));
+    cardSection.addWidget(tutorialText);
+
+    cardSection.addWidget(divider);
+
     const companyNameInput = CardService.newTextInput()
       .setFieldName("company_name_input")
       .setTitle("Enter company name")

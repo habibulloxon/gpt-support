@@ -31,6 +31,7 @@ const createSettings = () => {
 
   if (!isUserPropsExist) {
     updatedSettings = {
+      openAiApiKey: "",
       companyName: "",
       summaryCreatingStatus: "idle",
       summaryUpdatingStatus: "idle",

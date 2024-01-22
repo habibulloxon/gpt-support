@@ -4,18 +4,23 @@
  * @returns {string} - summarized template.
  */
 const summarization = (input) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let apiKey = settings.openAiApiKey
+
   try {
     const url = "https://api.openai.com/v1/chat/completions";
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     };
     const options = {
       headers,
       method: "GET",
       muteHttpExceptions: true,
       payload: JSON.stringify({
-        model: "gpt-4-1106-preview", // gpt-3.5-turbo
+        model: "gpt-4", // gpt-4-1106-preview
         messages: [
           {
             role: "system",
@@ -51,6 +56,7 @@ const getUploadedFileId = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
   let fileId = settings.docsFileId;
+  let apiKey = settings.openAiApiKey
   let docsFile = DocumentApp.openById(fileId)
   let docBody = docsFile.getBody().getText()
   let blobDoc = Utilities.newBlob(docBody, 'text/plain', `${USERNAME}-emails.txt`);
@@ -58,7 +64,7 @@ const getUploadedFileId = () => {
   try {
     let url = "https://api.openai.com/v1/files";
     let headers = {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     };
     let payload = {
       purpose: "assistants",
@@ -87,11 +93,12 @@ const getCreatedAssistantId = (fileId) => {
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let companyName = settings.companyName
+  let apiKey = settings.openAiApiKey
 
   let url = "https://api.openai.com/v1/assistants";
   try {
     let headers = {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "OpenAI-Beta": "assistants=v1",
     };
@@ -100,7 +107,7 @@ const getCreatedAssistantId = (fileId) => {
       description: `Support bot of ${USERNAME}`,
       instructions: `You are a Support Agent in ${companyName}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
       tools: [{ "type": "retrieval" }],
-      model: "gpt-4-1106-preview",
+      model: "gpt-4", // gpt-4-1106-preview
       file_ids: [`${fileId}`],
     };
     let payloadJson = JSON.stringify(payload);
@@ -145,10 +152,14 @@ const createAssistant = () => {
  * @returns {integer} - created thread id.
  */
 const createNewThread = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let apiKey = settings.openAiApiKey
   try {
     let url = 'https://api.openai.com/v1/threads';
     let headers = {
-      'Authorization': `Bearer ${API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v1'
     };
@@ -205,10 +216,14 @@ const getAssistantThreadId = (emailThreadId) => {
  * @returns {integer} - added message thread id.
  */
 const addMessageToAssistantThread = (assistantThreadId, message) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let apiKey = settings.openAiApiKey
   try {
     let url = `https://api.openai.com/v1/threads/${assistantThreadId}/messages`;
     let headers = {
-      'Authorization': `Bearer ${API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v1'
     };
@@ -240,10 +255,12 @@ const runAssistantThread = (threadId, user) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
   const assistantId = settings.assistantId
+
+  let apiKey = settings.openAiApiKey
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/runs`;
     let headers = {
-      'Authorization': `Bearer ${API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v1'
     };
@@ -272,10 +289,14 @@ const runAssistantThread = (threadId, user) => {
  * @returns {string} - run status.
  */
 const retrieveRunStatus = (threadId, runId) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let apiKey = settings.openAiApiKey
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/runs/${runId}`;
     let headers = {
-      'Authorization': `Bearer ${API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v1'
     };
@@ -298,11 +319,15 @@ const retrieveRunStatus = (threadId, runId) => {
  * @returns {string} - response from assistant.
  */
 const getAssistantMessages = (threadId) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let apiKey = settings.openAiApiKey
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/messages`;
     let headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`,
+      "Authorization": `Bearer ${apiKey}`,
       "OpenAI-Beta": "assistants=v1"
     };
     let options = {
@@ -328,6 +353,7 @@ const deleteAssistantAndFile = () => {
 
   const fileId = settings.fileId
   const assistantId = settings.assistantId
+  let apiKey = settings.openAiApiKey
 
   // url's to use
   let fileUrl = `https://api.openai.com/v1/files/${fileId}`
@@ -336,7 +362,7 @@ const deleteAssistantAndFile = () => {
   // headers and options for assistant:
   const assistantHeaders = {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${API_KEY}`,
+    "Authorization": `Bearer ${apiKey}`,
     "OpenAI-Beta": "assistants=v1"
   };
 
@@ -355,7 +381,7 @@ const deleteAssistantAndFile = () => {
 
   // headers and options for file:
   const fileHeaders = {
-    "Authorization": `Bearer ${API_KEY}`
+    "Authorization": `Bearer ${apiKey}`
   };
 
   const fileOptions = {

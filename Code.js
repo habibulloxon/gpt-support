@@ -1,5 +1,4 @@
 const ADDON_TITLE = "Email GPT support";
-const API_KEY = "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";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
 
