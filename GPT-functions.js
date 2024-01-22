@@ -126,7 +126,8 @@ const createAssistant = () => {
     }
     saveSettings(updatedSettings)
     installTimeDrivenTrigger()
-    refreshCard();
+    // refreshCard();
+    sendAssistantCreationEmail();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
   }

@@ -15,6 +15,84 @@ const formatAssistantResponse = (inputString) => {
   return outputString
 }
 
+const sendSummaryCreationEmail = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let fileLink = settings.docsFileLink
+
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - summary created`;
+  const template = HtmlService.createTemplateFromFile("summary-creation-notification");
+
+  let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
+
+  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!")
+}
+
+const sendAssistantCreationEmail = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let assistantId = settings.assistantId
+
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - assistant created`;
+  const template = HtmlService.createTemplateFromFile("assistant-creation-notification");
+
+  let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `${assistantId}`
+
+  htmlOutput = htmlOutput.replace("{{assistant_id}}", resultHTML);
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!")
+}
+
+const sendSummaryUpdateEmail = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let fileLink = settings.docsFileLink
+
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - summary updated`;
+  const template = HtmlService.createTemplateFromFile("summary-update-notification");
+
+  let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
+
+  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!")
+}
+
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -185,7 +263,7 @@ const createInboxSummary = () => {
   };
   saveSettings(updatedSettings);
 
-  sendEmail()
+  sendSummaryCreationEmail()
 };
 
 const updateInboxSummary = () => {
@@ -216,9 +294,5 @@ const updateInboxSummary = () => {
   };
   saveSettings(updatedSettings);
 
-  var nav = CardService.newNavigation().popToRoot();
-
-  return CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .build();
+  sendSummaryUpdateEmail()
 };

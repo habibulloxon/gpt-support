@@ -5,32 +5,6 @@ const deleteUserProperties = () => {
   console.log("All properties were deleted")
 }
 
-function sendEmail() {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let fileLink = settings.docsFileLink
-
-  const email = Session.getActiveUser().getEmail();
-  const subject = `${ADDON_TITLE} - summary created`;
-  const template = HtmlService.createTemplateFromFile("notification");
-
-  let htmlOutput = template.evaluate().getContent();
-
-  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
-
-  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
-
-  MailApp.sendEmail({
-    to: email,
-    subject: subject,
-    name: ADDON_TITLE,
-    htmlBody: htmlOutput,
-  });
-
-  console.log("Sent!")
-}
-
 function getSettingsToConsole() {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -71,14 +45,6 @@ function logText() {
   saveSettings(updatedSettings);
 
   refreshCard()
-}
-
-function handleClick() {
-  var actionResponse = loadingCard();
-
-  installSummaryCreationTriggers()
-
-  return actionResponse;
 }
 
 function goToRootCard() {

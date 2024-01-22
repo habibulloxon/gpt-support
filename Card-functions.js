@@ -19,7 +19,7 @@ const setScrappingLimit = (e) => {
 };
 
 const confirmAction = () => {
-  installSummaryUpdateTriggers()
+  updateInboxSummaryRedirect()
 }
 
 const denyAction = () => {
@@ -31,7 +31,81 @@ const denyAction = () => {
 }
 
 
-const updateInboxSummaryAction = () => {
+const updateInboxSummaryRedirect = () => {
+  var actionResponse = summaryUpdateCard();
+
+  installSummaryUpdateTriggers()
+
+  return actionResponse;
+}
+
+const handleSummaryCreationClick = () => {
+  var actionResponse = summaryCreatingCard();
+
+  installSummaryCreationTriggers()
+
+  return actionResponse;
+}
+
+const summaryCreatingCard = () => {
+  let loadingCardSection = CardService.newCardSection();
+
+  let loadingText = CardService.newTextParagraph()
+    .setText("Your inbox summary is creating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  loadingCardSection.addWidget(loadingText);
+
+  let loadingCard = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle('Creation is in progress'))
+    .addSection(loadingCardSection)
+    .build();
+
+  let nav = CardService.newNavigation().pushCard(loadingCard);
+
+  let notification = CardService.newNotification()
+    .setText("Your inbox summary is creating...");
+
+  var actionResponse = CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .setNotification(notification)
+    .build();
+
+  return actionResponse;
+}
+
+const handleAssistantCreationClick = () => {
+  var actionResponse = assistantCreatingCard();
+
+  createAssistant()
+
+  return actionResponse;
+}
+
+const assistantCreatingCard = () => {
+  let loadingCardSection = CardService.newCardSection();
+
+  let loadingText = CardService.newTextParagraph()
+    .setText("Your assistant is creating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  loadingCardSection.addWidget(loadingText);
+
+  let loadingCard = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle('Creation is in progress'))
+    .addSection(loadingCardSection)
+    .build();
+
+  let nav = CardService.newNavigation().pushCard(loadingCard);
+
+  let notification = CardService.newNotification()
+    .setText("Your assistant summary is creating...");
+
+  var actionResponse = CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .setNotification(notification)
+    .build();
+
+  return actionResponse;
+}
+
+const handleSummaryUpdateClick = () => {
   let isFileChanged = compareUpdatedDates()
 
   if (isFileChanged) {
@@ -63,8 +137,33 @@ const updateInboxSummaryAction = () => {
       .setNavigation(nav)
       .build();
   } else {
-    installSummaryUpdateTriggers()
+    updateInboxSummaryRedirect()
   }
+}
+
+const summaryUpdateCard = () => {
+  let loadingCardSection = CardService.newCardSection();
+
+  let loadingText = CardService.newTextParagraph()
+    .setText("Your inbox summary is updating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  loadingCardSection.addWidget(loadingText);
+
+  let loadingCard = CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle('Update is in progress'))
+    .addSection(loadingCardSection)
+    .build();
+
+  let nav = CardService.newNavigation().pushCard(loadingCard);
+
+  let notification = CardService.newNotification()
+    .setText("Your inbox summary is updating...");
+
+  var actionResponse = CardService.newActionResponseBuilder()
+    .setNavigation(nav)
+    .setNotification(notification)
+    .build();
+
+  return actionResponse;
 }
 
 const runAddon = () => {
@@ -79,9 +178,9 @@ const runAddon = () => {
   const isFileCreated = settings.isFileCreated;
 
   const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
-  const createInboxSummaryAction = CardService.newAction().setFunctionName('handleClick');
-  const updateInboxSummaryAction = CardService.newAction().setFunctionName("updateInboxSummaryAction")
-  const createAssistantAction = CardService.newAction().setFunctionName("createAssistant")
+  const createInboxSummaryAction = CardService.newAction().setFunctionName('handleSummaryCreationClick');
+  const updateInboxSummaryAction = CardService.newAction().setFunctionName("handleSummaryUpdateClick")
+  const createAssistantAction = CardService.newAction().setFunctionName("handleAssistantCreationClick")
   const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
 
   if (isFileCreated === false) {
