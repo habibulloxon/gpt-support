@@ -3,7 +3,6 @@ const refreshCard = () => {
   return CardService.newNavigation().updateCard(card);
 }
 
-
 const setScrappingLimit = (e) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));

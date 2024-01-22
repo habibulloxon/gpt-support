@@ -31,10 +31,12 @@ const summarization = (input) => {
       }),
     };
     const response = JSON.parse(
-      UrlFetchApp.fetch(url, options).getContentText(),
+      UrlFetchApp.fetch(url, options),
     );
 
-    let summarizedText = response.choices[0].message.content;
+    console.log("responses", response)
+
+    let summarizedText = response['choices'][0]['message']['content'];
     return summarizedText;
   } catch (error) {
     console.error("Error in summarization:", error);
