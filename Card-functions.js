@@ -18,6 +18,20 @@ const setScrappingLimit = (e) => {
   saveSettings(updatedSettings)
 };
 
+const setCompanyName = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let inputValue = e.formInput.company_name_input
+
+  let updatedSettings = {
+    ...settings,
+    companyName: inputValue
+  }
+
+  saveSettings(updatedSettings)
+};
+
 const confirmAction = () => {
   updateInboxSummaryRedirect()
 }
@@ -176,14 +190,30 @@ const runAddon = () => {
   const cardSection = CardService.newCardSection();
 
   const isFileCreated = settings.isFileCreated;
+  const companyName = settings.companyName;
 
   const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
+  const setCompanyNameAction = CardService.newAction().setFunctionName('setCompanyName');
+
   const createInboxSummaryAction = CardService.newAction().setFunctionName('handleSummaryCreationClick');
   const updateInboxSummaryAction = CardService.newAction().setFunctionName("handleSummaryUpdateClick")
   const createAssistantAction = CardService.newAction().setFunctionName("handleAssistantCreationClick")
   const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
 
   if (isFileCreated === false) {
+    const companyNameInput = CardService.newTextInput()
+      .setFieldName("company_name_input")
+      .setTitle("Enter company name")
+      .setValue(`${companyName}`);
+    cardSection.addWidget(companyNameInput);
+
+    const setCompanyNameButton = CardService.newTextButton()
+      .setText("Set company name")
+      .setOnClickAction(setCompanyNameAction);
+    cardSection.addWidget(setCompanyNameButton);
+
+    cardSection.addWidget(divider);
+
     const createFileButton = CardService.newTextButton()
       .setText("Create summary")
       .setOnClickAction(createInboxSummaryAction)

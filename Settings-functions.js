@@ -31,6 +31,7 @@ const createSettings = () => {
 
   if (!isUserPropsExist) {
     updatedSettings = {
+      companyName: "",
       summaryCreatingStatus: "idle",
       summaryUpdatingStatus: "idle",
       fileId: "",

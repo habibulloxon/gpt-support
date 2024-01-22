@@ -81,6 +81,11 @@ const getUploadedFileId = () => {
  * @returns {integer} - create assistant id.
  */
 const getCreatedAssistantId = (fileId) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let companyName = settings.companyName
+
   let url = "https://api.openai.com/v1/assistants";
   try {
     let headers = {
@@ -91,7 +96,7 @@ const getCreatedAssistantId = (fileId) => {
     let payload = {
       name: `${USERNAME}-assistant`,
       description: `Support bot of ${USERNAME}`,
-      instructions: "You are a support bot of a company, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file. Do not include anything in the end of an email",
+      instructions: `You are a Support Agent in ${companyName}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
       tools: [{ "type": "retrieval" }],
       model: "gpt-4-1106-preview",
       file_ids: [`${fileId}`],
