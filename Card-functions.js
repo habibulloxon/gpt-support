@@ -88,6 +88,46 @@ const handleSaveClick = (e) => {
   return CardService.newNavigation().updateCard(card);
 };
 
+const handleSettingsUpdateClick = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const previosCompanyName = settings.companyName;
+  const previosAssistantName = settings.assistantName;
+  const previosApiKey = settings.openAiApiKey;
+  const previosEmailsLimit = settings.emailsLimit;
+  const previosAutoReply = settings.autoReply;
+
+  let currentSelectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
+
+  let currentCompanyName = e.formInput.company_name_input;
+  let currentAssistantName = e.formInput.assistant_name_input;
+  let currentApiKey = e.formInput.api_key_input;
+  let currentEmailsLimit = e.formInput.emails_limit_input;
+  let currentAutoReply = currentSelectedAutoReplyValue.stringInputs.value[0];
+
+  if(
+    previosCompanyName !== currentCompanyName ||
+    previosAssistantName !== currentAssistantName ||
+    previosApiKey !== currentApiKey || 
+    previosEmailsLimit !== currentEmailsLimit ||
+    previosAutoReply !== currentAutoReply
+  ) {
+    let updatedSettings = {
+      ...settings,
+      companyName: currentCompanyName,
+      assistantName: currentAssistantName, 
+      openAiApiKey: currentApiKey,
+      emailsLimit: currentEmailsLimit,
+      autoReply: currentAutoReply
+    }
+
+    saveSettings(updatedSettings);
+  } else {
+    Logger.log("There is nothing to change")
+  }
+};
+
 const runAddon = () => {
   // creating initial settings
   createSettings();
@@ -110,19 +150,16 @@ const runAddon = () => {
   const apiKey = settings.openAiApiKey;
   const emailsLimit = settings.emailsLimit;
   const autoReply = settings.autoReply;
+  const fileLink = settings.docsFileLink;
 
   // actions === functions
-  const saveSettingsAction = CardService.newAction().setFunctionName(
-    "handleSaveClick",
-  );
+  const saveSettingsAction =
+    CardService.newAction().setFunctionName("handleSaveClick");
   const updateInboxSummaryAction = CardService.newAction().setFunctionName(
     "handleSummaryUpdateClick"
   );
-  const createAssistantAction = CardService.newAction().setFunctionName(
-    "handleAssistantCreationClick"
-  );
-  const stopAssistantAction = CardService.newAction().setFunctionName(
-    "deleteAssistantAndFile"
+  const updateUserSettingsAction = CardService.newAction().setFunctionName(
+    "handleSettingsUpdateClick"
   );
 
   // card rendering based on several conditions
@@ -172,8 +209,6 @@ const runAddon = () => {
         .setOnClickAction(saveSettingsAction);
       cardSection.addWidget(button);
     } else {
-      const fileLink = settings.docsFileLink;
-
       const fileUrlText = CardService.newTextParagraph().setText(
         `Your file was created`
       );
@@ -197,18 +232,56 @@ const runAddon = () => {
 
       cardSection.addWidget(divider);
 
-      const assistantId = settings.assistantId;
-      if (assistantId === "") {
-        const createAssistantButton = CardService.newTextButton()
-          .setText("Create and Start Assistant")
-          .setOnClickAction(createAssistantAction);
-        cardSection.addWidget(createAssistantButton);
+      const userSettingsText =
+        CardService.newTextParagraph().setText(`Addon settings:`);
+      cardSection.addWidget(userSettingsText);
+
+      const companyNameInput = CardService.newTextInput()
+        .setFieldName("company_name_input")
+        .setTitle("Company name:")
+        .setValue(`${companyName}`);
+      cardSection.addWidget(companyNameInput);
+
+      const assistantNameInput = CardService.newTextInput()
+        .setFieldName("assistant_name_input")
+        .setTitle("Assistant name:")
+        .setValue(`${assistantName}`);
+      cardSection.addWidget(assistantNameInput);
+
+      const emailsLimitInput = CardService.newTextInput()
+        .setFieldName("emails_limit_input")
+        .setTitle("Emails limit:")
+        .setValue(`${emailsLimit}`);
+      cardSection.addWidget(emailsLimitInput);
+
+      const apiKeyInput = CardService.newTextInput()
+        .setFieldName("api_key_input")
+        .setTitle("Api key:")
+        .setValue(`${apiKey}`);
+      cardSection.addWidget(apiKeyInput);
+
+      if (autoReply === "true") {
+        let radioGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Autoreply:")
+          .setFieldName("radio_field")
+          .addItem("Enabled", "true", true)
+          .addItem("Disabled", "false", false);
+        cardSection.addWidget(radioGroup);
       } else {
-        const stopAssistantButton = CardService.newTextButton()
-          .setText("Delete and stop assistant")
-          .setOnClickAction(stopAssistantAction);
-        cardSection.addWidget(stopAssistantButton);
+        let radioGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Autoreply:")
+          .setFieldName("radio_field")
+          .addItem("Enabled", "true", false)
+          .addItem("Disabled", "false", true);
+        cardSection.addWidget(radioGroup);
       }
+
+      const updateSettingsButton = CardService.newTextButton()
+        .setText("Update settings")
+        .setOnClickAction(updateUserSettingsAction);
+      cardSection.addWidget(updateSettingsButton);
     }
   }
 
