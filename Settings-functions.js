@@ -31,20 +31,22 @@ const createSettings = () => {
 
   if (!isUserPropsExist) {
     updatedSettings = {
+      assistantName: "Zeva",
       openAiApiKey: "",
       companyName: "",
-      summaryCreatingStatus: "idle",
+      emailsLimit: 100,
+      autoReply: "true",
+      mainFunctionStatus: "idle",
       summaryUpdatingStatus: "idle",
       fileId: "",
       assistantId: "",
-      isAssistantCreated: false,
-      threadIds: [],
-      emailsLimit: 100,
-      isFileCreated: false,
       docsFileId: "",
       docsFileLink: "",
       lastUpdatedDate: "",
+      isFileCreated: false,
       isFileUpdated: false,
+      isAssistantCreated: false,
+      threadIds: [],
       checkTimeStamp: pastTimestamp
     }
     saveSettings(updatedSettings);

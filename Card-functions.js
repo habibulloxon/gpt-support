@@ -1,128 +1,52 @@
 const refreshCard = () => {
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
-}
-
-const setScrappingLimit = (e) => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let inputValue = e.formInput.emails_limit_input
-
-  let updatedSettings = {
-    ...settings,
-    emailsLimit: inputValue
-  }
-
-  saveSettings(updatedSettings)
-};
-
-const setCompanyName = (e) => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let inputValue = e.formInput.company_name_input
-
-  let updatedSettings = {
-    ...settings,
-    companyName: inputValue
-  }
-
-  saveSettings(updatedSettings)
-};
-
-const setApiKey = (e) => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let inputValue = e.formInput.apikey_input
-
-  let updatedSettings = {
-    ...settings,
-    openAiApiKey: inputValue
-  }
-
-  saveSettings(updatedSettings)
 };
 
 const confirmAction = () => {
-  updateInboxSummaryRedirect()
-}
+  updateInboxSummaryRedirect();
+};
 
 const denyAction = () => {
   var nav = CardService.newNavigation().popToRoot();
 
-  return CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .build();
-}
-
+  return CardService.newActionResponseBuilder().setNavigation(nav).build();
+};
 
 const updateInboxSummaryRedirect = () => {
   var actionResponse = summaryUpdateCard();
 
-  installSummaryUpdateTriggers()
+  installSummaryUpdateTriggers();
 
   return actionResponse;
-}
-
-const handleSummaryCreationClick = () => {
-  var actionResponse = summaryCreatingCard();
-
-  installSummaryCreationTriggers()
-
-  return actionResponse;
-}
-
-const summaryCreatingCard = () => {
-  let loadingCardSection = CardService.newCardSection();
-
-  let loadingText = CardService.newTextParagraph()
-    .setText("Your inbox summary is creating. It might take a few minutes, we will notify you when it is ready. You can close addon");
-  loadingCardSection.addWidget(loadingText);
-
-  let loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Creation is in progress'))
-    .addSection(loadingCardSection)
-    .build();
-
-  let nav = CardService.newNavigation().pushCard(loadingCard);
-
-  let notification = CardService.newNotification()
-    .setText("Your inbox summary is creating...");
-
-  var actionResponse = CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .setNotification(notification)
-    .build();
-
-  return actionResponse;
-}
+};
 
 const handleAssistantCreationClick = () => {
   var actionResponse = assistantCreatingCard();
 
-  createAssistant()
+  createAssistant();
 
   return actionResponse;
-}
+};
 
 const assistantCreatingCard = () => {
   let loadingCardSection = CardService.newCardSection();
 
-  let loadingText = CardService.newTextParagraph()
-    .setText("Your assistant is creating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  let loadingText = CardService.newTextParagraph().setText(
+    "Your assistant is creating. It might take a few minutes, we will notify you when it is ready. You can close addon",
+  );
   loadingCardSection.addWidget(loadingText);
 
   let loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Creation is in progress'))
+    .setHeader(CardService.newCardHeader().setTitle("Creation is in progress"))
     .addSection(loadingCardSection)
     .build();
 
   let nav = CardService.newNavigation().pushCard(loadingCard);
 
-  let notification = CardService.newNotification()
-    .setText("Your assistant summary is creating...");
+  let notification = CardService.newNotification().setText(
+    "Your assistant summary is creating...",
+  );
 
   var actionResponse = CardService.newActionResponseBuilder()
     .setNavigation(nav)
@@ -130,14 +54,15 @@ const assistantCreatingCard = () => {
     .build();
 
   return actionResponse;
-}
+};
 
 const handleSummaryUpdateClick = () => {
-  let isFileChanged = compareUpdatedDates()
+  let isFileChanged = compareUpdatedDates();
 
   if (isFileChanged) {
-    const confirmAction = CardService.newAction().setFunctionName('confirmAction');
-    const denyAction = CardService.newAction().setFunctionName('denyAction');
+    const confirmAction =
+      CardService.newAction().setFunctionName("confirmAction");
+    const denyAction = CardService.newAction().setFunctionName("denyAction");
 
     const confirmButton = CardService.newTextButton()
       .setText("Yes")
@@ -152,38 +77,43 @@ const handleSummaryUpdateClick = () => {
       .addWidget(denyButton);
 
     var secondCard = CardService.newCardBuilder()
-      .setHeader(CardService.newCardHeader().setTitle('Please confirm action'))
+      .setHeader(CardService.newCardHeader().setTitle("Please confirm action"))
       .addSection(secondCardSection)
-      .addSection(CardService.newCardSection()
-        .addWidget(CardService.newTextParagraph().setText('You have changed original summary, do you want to override it?')))
+      .addSection(
+        CardService.newCardSection().addWidget(
+          CardService.newTextParagraph().setText(
+            "You have changed original summary, do you want to override it?",
+          ),
+        ),
+      )
       .build();
 
     var nav = CardService.newNavigation().pushCard(secondCard);
 
-    return CardService.newActionResponseBuilder()
-      .setNavigation(nav)
-      .build();
+    return CardService.newActionResponseBuilder().setNavigation(nav).build();
   } else {
-    updateInboxSummaryRedirect()
+    updateInboxSummaryRedirect();
   }
-}
+};
 
 const summaryUpdateCard = () => {
   let loadingCardSection = CardService.newCardSection();
 
-  let loadingText = CardService.newTextParagraph()
-    .setText("Your inbox summary is updating. It might take a few minutes, we will notify you when it is ready. You can close addon");
+  let loadingText = CardService.newTextParagraph().setText(
+    "Your inbox summary is updating. It might take a few minutes, we will notify you when it is ready. You can close addon",
+  );
   loadingCardSection.addWidget(loadingText);
 
   let loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Update is in progress'))
+    .setHeader(CardService.newCardHeader().setTitle("Update is in progress"))
     .addSection(loadingCardSection)
     .build();
 
   let nav = CardService.newNavigation().pushCard(loadingCard);
 
-  let notification = CardService.newNotification()
-    .setText("Your inbox summary is updating...");
+  let notification = CardService.newNotification().setText(
+    "Your inbox summary is updating...",
+  );
 
   var actionResponse = CardService.newActionResponseBuilder()
     .setNavigation(nav)
@@ -191,124 +121,152 @@ const summaryUpdateCard = () => {
     .build();
 
   return actionResponse;
-}
+};
+
+const main = () => {
+  installSummaryCreationTriggers();
+};
+
+const handleSaveClick = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let selectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
+
+  let companyName = e.formInput.company_name_input;
+  let assistantName = e.formInput.assistant_name_input;
+  let emailsLimit = e.formInput.emails_limit_input;
+  let apiKey = e.formInput.api_key_input;
+  let autoReply = selectedAutoReplyValue.stringInputs.value[0];
+
+  let progressSettings = {
+    ...settings,
+    mainFunctionStatus: "running",
+    companyName: companyName,
+    assistantName: assistantName,
+    emailsLimit: emailsLimit,
+    openAiApiKey: apiKey,
+    autoReply: autoReply,
+  };
+  saveSettings(progressSettings);
+
+  ScriptApp.newTrigger("main")
+    .timeBased()
+    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
+    .create();
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+};
 
 const runAddon = () => {
   createSettings();
   const divider = CardService.newDivider();
+  const cardSection = CardService.newCardSection();
 
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  const cardSection = CardService.newCardSection();
+  const mainFunctionStatus = settings.mainFunctionStatus;
 
-  const isFileCreated = settings.isFileCreated;
-  const companyName = settings.companyName;
-  const openAiApiKey = settings.openAiApiKey;
+  const saveSettingsAction =
+    CardService.newAction().setFunctionName("handleSaveClick");
 
-  const setScrappingLimitAction = CardService.newAction().setFunctionName('setScrappingLimit');
-  const setCompanyNameAction = CardService.newAction().setFunctionName('setCompanyName');
-  const setApiKeyAction = CardService.newAction().setFunctionName('setApiKey');
+  const updateInboxSummaryAction = CardService.newAction().setFunctionName(
+    "handleSummaryUpdateClick",
+  );
+  const createAssistantAction = CardService.newAction().setFunctionName(
+    "handleAssistantCreationClick",
+  );
+  const stopAssistantAction = CardService.newAction().setFunctionName(
+    "deleteAssistantAndFile",
+  );
 
-  const createInboxSummaryAction = CardService.newAction().setFunctionName('handleSummaryCreationClick');
-  const updateInboxSummaryAction = CardService.newAction().setFunctionName("handleSummaryUpdateClick")
-  const createAssistantAction = CardService.newAction().setFunctionName("handleAssistantCreationClick")
-  const stopAssistantAction = CardService.newAction().setFunctionName("deleteAssistantAndFile")
-
-  if (isFileCreated === false) {
-    const apiKeyInput = CardService.newTextInput()
-      .setFieldName("apikey_input")
-      .setTitle("Enter Open AI api key")
-      .setValue(`${openAiApiKey}`);
-    cardSection.addWidget(apiKeyInput);
-
-    const setApiKeyButton = CardService.newTextButton()
-      .setText("Set API key")
-      .setOnClickAction(setApiKeyAction);
-    cardSection.addWidget(setApiKeyButton);
-
-    cardSection.addWidget(divider);
-
-    const tutorialText = CardService.newTextButton()
-      .setText("How to get API key?")
-      .setOpenLink(CardService.newOpenLink()
-        .setUrl("https://youtu.be/aVog4J6nIAU"));
-    cardSection.addWidget(tutorialText);
-
-    cardSection.addWidget(divider);
-
-    const companyNameInput = CardService.newTextInput()
-      .setFieldName("company_name_input")
-      .setTitle("Enter company name")
-      .setValue(`${companyName}`);
-    cardSection.addWidget(companyNameInput);
-
-    const setCompanyNameButton = CardService.newTextButton()
-      .setText("Set company name")
-      .setOnClickAction(setCompanyNameAction);
-    cardSection.addWidget(setCompanyNameButton);
-
-    cardSection.addWidget(divider);
-
-    const createFileButton = CardService.newTextButton()
-      .setText("Create summary")
-      .setOnClickAction(createInboxSummaryAction)
-    cardSection.addWidget(createFileButton)
+  if (mainFunctionStatus === "running") {
+    const loadingText = CardService.newTextParagraph().setText(
+      "Your settings are saving",
+    );
+    cardSection.addWidget(loadingText);
   } else {
-    const emailsLimit = settings.emailsLimit;
-    const fileLink = settings.docsFileLink;
+    const isFileCreated = settings.isFileCreated;
+    if (isFileCreated === false) {
+      const companyNameInput = CardService.newTextInput()
+        .setFieldName("company_name_input")
+        .setTitle("Enter company name");
+      cardSection.addWidget(companyNameInput);
 
-    const fileUrlText = CardService.newTextParagraph()
-      .setText(`Your file was created`);
-    cardSection.addWidget(fileUrlText);
+      const assistantNameInput = CardService.newTextInput()
+        .setFieldName("assistant_name_input")
+        .setTitle("Enter assistant name");
+      cardSection.addWidget(assistantNameInput);
 
-    const viewFileButton = CardService.newTextButton()
-      .setText("View File")
-      .setOpenLink(CardService.newOpenLink()
-        .setUrl(`${fileLink}`)
-        .setOpenAs(CardService.OpenAs.FULL_SIZE));
-    cardSection.addWidget(viewFileButton);
+      const emailsLimitInput = CardService.newTextInput()
+        .setFieldName("emails_limit_input")
+        .setTitle("Enter emails limit");
+      cardSection.addWidget(emailsLimitInput);
 
-    cardSection.addWidget(divider);
+      const apiKeyInput = CardService.newTextInput()
+        .setFieldName("api_key_input")
+        .setTitle("Enter api key");
+      cardSection.addWidget(apiKeyInput);
 
-    const limitInput = CardService.newTextInput()
-      .setFieldName("emails_limit_input")
-      .setTitle("Enter emails limit")
-      .setHint("by default it is 1000")
-      .setValue(`${emailsLimit}`);
-    cardSection.addWidget(limitInput);
+      let radioGroup = CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.RADIO_BUTTON)
+        .setTitle("Autoreply:")
+        .setFieldName("radio_field")
+        .addItem("Enabled", "true", true)
+        .addItem("Disabled", "false", false);
+      cardSection.addWidget(radioGroup);
 
-    const setLimitButton = CardService.newTextButton()
-      .setText("Set limit")
-      .setOnClickAction(setScrappingLimitAction);
-    cardSection.addWidget(setLimitButton);
-
-    cardSection.addWidget(divider);
-
-    const updateSummaryFileBtn = CardService.newTextButton()
-      .setText("Update summary file")
-      .setOnClickAction(updateInboxSummaryAction);
-    cardSection.addWidget(updateSummaryFileBtn);
-
-    cardSection.addWidget(divider);
-
-    const assistantId = settings.assistantId;
-    if (assistantId === "") {
-      const createAssistantButton = CardService.newTextButton()
-        .setText("Create and Start Assistant")
-        .setOnClickAction(createAssistantAction);
-      cardSection.addWidget(createAssistantButton);
+      const button = CardService.newTextButton()
+        .setText("Save settings")
+        .setOnClickAction(saveSettingsAction);
+      cardSection.addWidget(button);
     } else {
-      const stopAssistantButton = CardService.newTextButton()
-        .setText("Delete and stop assistant")
-        .setOnClickAction(stopAssistantAction);
-      cardSection.addWidget(stopAssistantButton);
+      const fileLink = settings.docsFileLink;
+
+      const fileUrlText = CardService.newTextParagraph().setText(
+        `Your file was created`,
+      );
+      cardSection.addWidget(fileUrlText);
+
+      const viewFileButton = CardService.newTextButton()
+        .setText("View File")
+        .setOpenLink(
+          CardService.newOpenLink()
+            .setUrl(`${fileLink}`)
+            .setOpenAs(CardService.OpenAs.FULL_SIZE),
+        );
+      cardSection.addWidget(viewFileButton);
+
+      cardSection.addWidget(divider);
+
+      const updateSummaryFileBtn = CardService.newTextButton()
+        .setText("Update summary file")
+        .setOnClickAction(updateInboxSummaryAction);
+      cardSection.addWidget(updateSummaryFileBtn);
+
+      cardSection.addWidget(divider);
+
+      const assistantId = settings.assistantId;
+      if (assistantId === "") {
+        const createAssistantButton = CardService.newTextButton()
+          .setText("Create and Start Assistant")
+          .setOnClickAction(createAssistantAction);
+        cardSection.addWidget(createAssistantButton);
+      } else {
+        const stopAssistantButton = CardService.newTextButton()
+          .setText("Delete and stop assistant")
+          .setOnClickAction(stopAssistantAction);
+        cardSection.addWidget(stopAssistantButton);
+      }
     }
   }
+
   const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
     .setHeader(CardService.newCardHeader().setTitle("Actions:"))
     .addSection(cardSection)
     .build();
   return card;
-}
+};

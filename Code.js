@@ -2,13 +2,6 @@ const ADDON_TITLE = "Email GPT support";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
 
-function testOfSummary() {
-  let inboxEmails = getAllMessages();
-  let summarizedEmails = summarization(inboxEmails);
-
-  console.log(summarizedEmails)
-}
-
 const formatMessageSender = (str) => {
   const parts = str.split('<');
   const contentBeforeAngleBracket = parts[0].trim();
@@ -245,9 +238,6 @@ const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let temporarySettings = { ...settings, summaryCreatingStatus: "running" };
-  saveSettings(temporarySettings);
-
   let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
   let docsFileId = docsFile.getId();
   let docsFileLink = DocumentApp.openById(docsFileId).getUrl();
@@ -260,7 +250,7 @@ const createInboxSummary = () => {
 
   let updatedSettings = {
     ...settings,
-    summaryCreatingStatus: "finished",
+    mainFunctionStatus: "finished",
     isSummaryCreated: true,
     isFileCreated: true,
     docsFileId: docsFileId,
@@ -270,6 +260,9 @@ const createInboxSummary = () => {
   saveSettings(updatedSettings);
 
   sendSummaryCreationEmail()
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
 const updateInboxSummary = () => {

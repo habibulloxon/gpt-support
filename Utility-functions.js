@@ -58,14 +58,68 @@ function goToRootCard() {
   deleteTriggers()
 }
 
+function handleRadioChange(e) {
+  let selectedValue = e.commonEventObject.formInputs.radio_field;
+  // {"stringInputs":{"value":["true"]}}
+  let value = selectedValue.stringInputs.value[0];
+  Logger.log("Selected radio button value: " + value);
+}
+
+const setUserSettings = (e) => {
+  let selectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
+
+  let companyName = e.formInput.company_name_input;
+  let assistantName = e.formInput.assistant_name_input;
+  let emailsLimit = e.formInput.emails_limit_input;
+  let apiKey = e.formInput.api_key_input;
+  let autoReply = selectedAutoReplyValue.stringInputs.value[0];
+
+  let userSettings = {
+    companyName: companyName,
+    assistantName: assistantName,
+    emailsLimit: emailsLimit, 
+    apiKey: apiKey, 
+    autoReply: autoReply
+  }
+
+  console.log("user settings: " + JSON.stringify(userSettings));
+}
 
 function testCard() {
   const cardSection = CardService.newCardSection();
 
-  const handleClickAction = CardService.newAction().setFunctionName("handleClick");
+  const handleClickAction = CardService.newAction().setFunctionName("setUserSettings");
+
+  const companyNameInput = CardService.newTextInput()
+    .setFieldName("company_name_input")
+    .setTitle("Enter company name")
+  cardSection.addWidget(companyNameInput);
+
+  const assistantNameInput = CardService.newTextInput()
+    .setFieldName("assistant_name_input")
+    .setTitle("Enter assistant name")
+  cardSection.addWidget(assistantNameInput);
+
+  const emailsLimitInput = CardService.newTextInput()
+    .setFieldName("emails_limit_input")
+    .setTitle("Enter emails limit")
+  cardSection.addWidget(emailsLimitInput);
+
+  const apiKeyInput = CardService.newTextInput()
+    .setFieldName("api_key_input")
+    .setTitle("Enter api key")
+  cardSection.addWidget(apiKeyInput);
+
+  let radioGroup = CardService.newSelectionInput()
+    .setType(CardService.SelectionInputType.RADIO_BUTTON)
+    .setTitle("Autoreply:")
+    .setFieldName("radio_field")
+    .addItem("Enabled", "true", true)
+    .addItem("Disabled", "false", false)
+  cardSection.addWidget(radioGroup)
 
   const button = CardService.newTextButton()
-    .setText("Create assistant")
+    .setText("Save")
     .setOnClickAction(handleClickAction);
   cardSection.addWidget(button);
 

@@ -20,7 +20,7 @@ const summarization = (input) => {
       method: "GET",
       muteHttpExceptions: true,
       payload: JSON.stringify({
-        model: "gpt-4", // gpt-4-1106-preview
+        model: "gpt-4-1106-preview", // gpt-4-1106-preview
         messages: [
           {
             role: "system",
@@ -94,6 +94,7 @@ const getCreatedAssistantId = (fileId) => {
 
   let companyName = settings.companyName
   let apiKey = settings.openAiApiKey
+  let name = settings.assistantName
 
   let url = "https://api.openai.com/v1/assistants";
   try {
@@ -105,9 +106,9 @@ const getCreatedAssistantId = (fileId) => {
     let payload = {
       name: `${USERNAME}-assistant`,
       description: `Support bot of ${USERNAME}`,
-      instructions: `You are a Support Agent in ${companyName}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
+      instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
       tools: [{ "type": "retrieval" }],
-      model: "gpt-4", // gpt-4-1106-preview
+      model: "gpt-4-1106-preview", // gpt-4-1106-preview
       file_ids: [`${fileId}`],
     };
     let payloadJson = JSON.stringify(payload);
@@ -137,6 +138,7 @@ const createAssistant = () => {
       ...settings,
       fileId: fileId,
       assistantId: assistantId,
+      isAssistantCreated: true
     }
     saveSettings(updatedSettings)
     installTimeDrivenTrigger()
