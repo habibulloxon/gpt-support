@@ -37,7 +37,7 @@ const createSettings = () => {
       emailsLimit: 100,
       autoReply: "true",
       mainFunctionStatus: "idle",
-      summaryUpdatingStatus: "idle",
+      updateFunctionStatus: "idle",
       fileId: "",
       assistantId: "",
       docsFileId: "",

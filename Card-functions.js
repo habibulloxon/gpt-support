@@ -4,56 +4,13 @@ const refreshCard = () => {
 };
 
 const confirmAction = () => {
-  updateInboxSummaryRedirect();
+  var nav = CardService.newNavigation().popToRoot();
+  return CardService.newActionResponseBuilder().setNavigation(nav).build();
 };
 
 const denyAction = () => {
   var nav = CardService.newNavigation().popToRoot();
-
   return CardService.newActionResponseBuilder().setNavigation(nav).build();
-};
-
-const updateInboxSummaryRedirect = () => {
-  var actionResponse = summaryUpdateCard();
-
-  installSummaryUpdateTriggers();
-
-  return actionResponse;
-};
-
-const handleAssistantCreationClick = () => {
-  var actionResponse = assistantCreatingCard();
-
-  createAssistant();
-
-  return actionResponse;
-};
-
-const assistantCreatingCard = () => {
-  let loadingCardSection = CardService.newCardSection();
-
-  let loadingText = CardService.newTextParagraph().setText(
-    "Your assistant is creating. It might take a few minutes, we will notify you when it is ready. You can close addon",
-  );
-  loadingCardSection.addWidget(loadingText);
-
-  let loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle("Creation is in progress"))
-    .addSection(loadingCardSection)
-    .build();
-
-  let nav = CardService.newNavigation().pushCard(loadingCard);
-
-  let notification = CardService.newNotification().setText(
-    "Your assistant summary is creating...",
-  );
-
-  var actionResponse = CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .setNotification(notification)
-    .build();
-
-  return actionResponse;
 };
 
 const handleSummaryUpdateClick = () => {
@@ -82,9 +39,9 @@ const handleSummaryUpdateClick = () => {
       .addSection(
         CardService.newCardSection().addWidget(
           CardService.newTextParagraph().setText(
-            "You have changed original summary, do you want to override it?",
-          ),
-        ),
+            "You have changed original summary, do you want to override it?"
+          )
+        )
       )
       .build();
 
@@ -92,35 +49,7 @@ const handleSummaryUpdateClick = () => {
 
     return CardService.newActionResponseBuilder().setNavigation(nav).build();
   } else {
-    updateInboxSummaryRedirect();
   }
-};
-
-const summaryUpdateCard = () => {
-  let loadingCardSection = CardService.newCardSection();
-
-  let loadingText = CardService.newTextParagraph().setText(
-    "Your inbox summary is updating. It might take a few minutes, we will notify you when it is ready. You can close addon",
-  );
-  loadingCardSection.addWidget(loadingText);
-
-  let loadingCard = CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle("Update is in progress"))
-    .addSection(loadingCardSection)
-    .build();
-
-  let nav = CardService.newNavigation().pushCard(loadingCard);
-
-  let notification = CardService.newNotification().setText(
-    "Your inbox summary is updating...",
-  );
-
-  var actionResponse = CardService.newActionResponseBuilder()
-    .setNavigation(nav)
-    .setNotification(notification)
-    .build();
-
-  return actionResponse;
 };
 
 const main = () => {
@@ -160,31 +89,51 @@ const handleSaveClick = (e) => {
 };
 
 const runAddon = () => {
+  // creating initial settings
   createSettings();
+
+  // card utilities
   const divider = CardService.newDivider();
   const cardSection = CardService.newCardSection();
 
+  // user properties === settings
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
+  // conditions
   const mainFunctionStatus = settings.mainFunctionStatus;
+  const updateFunctionStatus = settings.updateFunctionStatus;
 
-  const saveSettingsAction =
-    CardService.newAction().setFunctionName("handleSaveClick");
+  // user settings from properties
+  const companyName = settings.companyName;
+  const assistantName = settings.assistantName;
+  const apiKey = settings.openAiApiKey;
+  const emailsLimit = settings.emailsLimit;
+  const autoReply = settings.autoReply;
 
+  // actions === functions
+  const saveSettingsAction = CardService.newAction().setFunctionName(
+    "handleSaveClick",
+  );
   const updateInboxSummaryAction = CardService.newAction().setFunctionName(
-    "handleSummaryUpdateClick",
+    "handleSummaryUpdateClick"
   );
   const createAssistantAction = CardService.newAction().setFunctionName(
-    "handleAssistantCreationClick",
+    "handleAssistantCreationClick"
   );
   const stopAssistantAction = CardService.newAction().setFunctionName(
-    "deleteAssistantAndFile",
+    "deleteAssistantAndFile"
   );
 
+  // card rendering based on several conditions
   if (mainFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      "Your settings are saving",
+      "Your settings are saving"
+    );
+    cardSection.addWidget(loadingText);
+  } else if (updateFunctionStatus === "running") {
+    const loadingText = CardService.newTextParagraph().setText(
+      "Your summary is updating"
     );
     cardSection.addWidget(loadingText);
   } else {
@@ -226,7 +175,7 @@ const runAddon = () => {
       const fileLink = settings.docsFileLink;
 
       const fileUrlText = CardService.newTextParagraph().setText(
-        `Your file was created`,
+        `Your file was created`
       );
       cardSection.addWidget(fileUrlText);
 
@@ -235,7 +184,7 @@ const runAddon = () => {
         .setOpenLink(
           CardService.newOpenLink()
             .setUrl(`${fileLink}`)
-            .setOpenAs(CardService.OpenAs.FULL_SIZE),
+            .setOpenAs(CardService.OpenAs.FULL_SIZE)
         );
       cardSection.addWidget(viewFileButton);
 

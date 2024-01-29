@@ -10,7 +10,6 @@ const formatMessageSender = (str) => {
 
 const formatAssistantResponse = (inputString) => {
   let outputString = inputString.replace(/【.*?】/g, "");
-
   return outputString
 }
 
@@ -195,45 +194,6 @@ const compareUpdatedDates = () => {
   }
 }
 
-const retrieveSummaryCreationStatus = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  let isRunning = settings.summaryCreatingStatus
-
-  return isRunning
-}
-
-const retrieveSummaryUpdateStatus = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  let isRunning = settings.summaryUpdatingStatus
-
-  return isRunning
-}
-
-const checkSummaryCreatingStatus = () => {
-  let runStatus;
-  while ((runStatus = retrieveSummaryCreationStatus()) !== "finished") {
-    if (runStatus === "running") {
-      Utilities.sleep(3000)
-    }
-  }
-
-  deleteTriggers()
-}
-
-const checkSummaryUpdateStatus = () => {
-  let runStatus;
-  while ((runStatus = retrieveSummaryUpdateStatus()) !== "finished") {
-    if (runStatus === "running") {
-      Utilities.sleep(3000)
-    }
-  }
-
-  deleteTriggers()
-}
-
-
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -288,7 +248,6 @@ const updateInboxSummary = () => {
 
   let updatedSettings = {
     ...settings,
-    summaryUpdatingStatus: "finished",
     lastUpdatedDate: docsFileLastUpdatedTimeStamp
   };
   saveSettings(updatedSettings);
