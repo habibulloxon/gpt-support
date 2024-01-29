@@ -53,7 +53,18 @@ const handleSummaryUpdateClick = () => {
 };
 
 const main = () => {
-  installSummaryCreationTriggers();
+  // installSummaryCreationTriggers();
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  console.log("main function finished")
+
+  let updatedSettings = {
+    ...settings,
+    isFileCreated: true,
+    mainFunctionStatus: "finished",
+  };
+  saveSettings(updatedSettings);
 };
 
 const handleSaveClick = (e) => {
@@ -287,7 +298,7 @@ const runAddon = () => {
 
   const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
-    .setHeader(CardService.newCardHeader().setTitle("Actions:"))
+    .setHeader(CardService.newCardHeader().setTitle("Enter information:"))
     .addSection(cardSection)
     .build();
   return card;
