@@ -57,7 +57,7 @@ const main = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  console.log("main function finished")
+  console.log("main function finished");
 
   let updatedSettings = {
     ...settings,
@@ -65,6 +65,49 @@ const main = () => {
     mainFunctionStatus: "finished",
   };
   saveSettings(updatedSettings);
+
+  sendAssistantCreationEmail()
+};
+
+/**
+ * Checks is API_KEY proper or not.
+ *
+ * @param {string} a - api key.
+ * @returns {boolean} true - valid | false - invalid.
+ */
+
+const checkIsApiKeyProper = (apiKey) => {
+  const url = "https://api.openai.com/v1/chat/completions";
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  const options = {
+    headers,
+    method: "GET",
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      model: "gpt-4-1106-preview",
+      messages: [
+        {
+          role: "system",
+          content: `Answer very shortly`,
+        },
+        {
+          role: "user",
+          content: "2+2=?",
+        },
+      ],
+      temperature: 0,
+    }),
+  };
+
+  const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+  const isValid = response.hasOwnProperty("error");
+
+  return !isValid;
 };
 
 const handleSaveClick = (e) => {
@@ -79,9 +122,18 @@ const handleSaveClick = (e) => {
   let apiKey = e.formInput.api_key_input;
   let autoReply = selectedAutoReplyValue.stringInputs.value[0];
 
+  let apiKeyStatus = checkIsApiKeyProper(apiKey);
+  let functionStatus;
+
+  if (apiKeyStatus) {
+    functionStatus = "running";
+  } else {
+    functionStatus = "error";
+  }
+
   let progressSettings = {
     ...settings,
-    mainFunctionStatus: "running",
+    mainFunctionStatus: functionStatus,
     companyName: companyName,
     assistantName: assistantName,
     emailsLimit: emailsLimit,
@@ -90,10 +142,12 @@ const handleSaveClick = (e) => {
   };
   saveSettings(progressSettings);
 
-  ScriptApp.newTrigger("main")
+  if(apiKeyStatus) {
+    ScriptApp.newTrigger("main")
     .timeBased()
     .at(new Date((getCurrentTimeStamp() + 1) * 1000))
     .create();
+  }
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -109,7 +163,8 @@ const handleSettingsUpdateClick = (e) => {
   const previosEmailsLimit = settings.emailsLimit;
   const previosAutoReply = settings.autoReply;
 
-  let currentSelectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
+  let currentSelectedAutoReplyValue =
+    e.commonEventObject.formInputs.radio_field;
 
   let currentCompanyName = e.formInput.company_name_input;
   let currentAssistantName = e.formInput.assistant_name_input;
@@ -117,26 +172,41 @@ const handleSettingsUpdateClick = (e) => {
   let currentEmailsLimit = e.formInput.emails_limit_input;
   let currentAutoReply = currentSelectedAutoReplyValue.stringInputs.value[0];
 
-  if(
+  if (
     previosCompanyName !== currentCompanyName ||
     previosAssistantName !== currentAssistantName ||
-    previosApiKey !== currentApiKey || 
+    previosApiKey !== currentApiKey ||
     previosEmailsLimit !== currentEmailsLimit ||
     previosAutoReply !== currentAutoReply
   ) {
     let updatedSettings = {
       ...settings,
       companyName: currentCompanyName,
-      assistantName: currentAssistantName, 
+      assistantName: currentAssistantName,
       openAiApiKey: currentApiKey,
       emailsLimit: currentEmailsLimit,
-      autoReply: currentAutoReply
-    }
+      autoReply: currentAutoReply,
+    };
 
     saveSettings(updatedSettings);
   } else {
-    Logger.log("There is nothing to change")
+    Logger.log("There is nothing to change");
   }
+};
+
+const reEnterApiKeyHandler = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let updatedSettings = {
+    ...settings,
+    mainFunctionStatus: "idle",
+    openAiApiKey: "",
+  };
+  saveSettings(updatedSettings);
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
 const runAddon = () => {
@@ -172,6 +242,9 @@ const runAddon = () => {
   const updateUserSettingsAction = CardService.newAction().setFunctionName(
     "handleSettingsUpdateClick"
   );
+  const reEnterApiKeyAction = CardService.newAction().setFunctionName(
+    "reEnterApiKeyHandler"
+  );
 
   // card rendering based on several conditions
   if (mainFunctionStatus === "running") {
@@ -179,6 +252,16 @@ const runAddon = () => {
       "Your settings are saving"
     );
     cardSection.addWidget(loadingText);
+  } else if (mainFunctionStatus === "error") {
+    const errorText = CardService.newTextParagraph().setText(
+      "Entered API key is not meeting requirements, please re-enter your API key"
+    );
+    cardSection.addWidget(errorText);
+
+    const button = CardService.newTextButton()
+      .setText("Re-enter settings")
+      .setOnClickAction(reEnterApiKeyAction);
+    cardSection.addWidget(button);
   } else if (updateFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
       "Your summary is updating"
@@ -189,22 +272,26 @@ const runAddon = () => {
     if (isFileCreated === false) {
       const companyNameInput = CardService.newTextInput()
         .setFieldName("company_name_input")
-        .setTitle("Enter company name");
+        .setTitle("Enter company name")
+        .setValue(`${companyName}`);
       cardSection.addWidget(companyNameInput);
 
       const assistantNameInput = CardService.newTextInput()
         .setFieldName("assistant_name_input")
-        .setTitle("Enter assistant name");
+        .setTitle("Enter assistant name")
+        .setValue(`${assistantName}`);
       cardSection.addWidget(assistantNameInput);
 
       const emailsLimitInput = CardService.newTextInput()
         .setFieldName("emails_limit_input")
-        .setTitle("Enter emails limit");
+        .setTitle("Enter emails limit")
+        .setValue(`${emailsLimit}`);
       cardSection.addWidget(emailsLimitInput);
 
       const apiKeyInput = CardService.newTextInput()
         .setFieldName("api_key_input")
-        .setTitle("Enter api key");
+        .setTitle("Enter api key")
+        .setValue(`${apiKey}`);
       cardSection.addWidget(apiKeyInput);
 
       let radioGroup = CardService.newSelectionInput()
