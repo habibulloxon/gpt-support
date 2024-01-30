@@ -1,33 +1,42 @@
 const ADDON_TITLE = "Email GPT support";
 const USER_EMAIL = Session.getActiveUser().getEmail();
-const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, '-');
+const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
 
 const formatMessageSender = (str) => {
-  const parts = str.split('<');
+  const parts = str.split("<");
   const contentBeforeAngleBracket = parts[0].trim();
-  return contentBeforeAngleBracket.replace(/"/g, '');
-}
+  return contentBeforeAngleBracket.replace(/"/g, "");
+};
 
 const formatAssistantResponse = (inputString) => {
   let outputString = inputString.replace(/【.*?】/g, "");
-  return outputString
-}
+  return outputString;
+};
 
-const sendSummaryCreationEmail = () => {
+const sendSummaryAndAssistantCreationEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let fileLink = settings.docsFileLink
+  let fileLink = settings.docsFileLink;
+  let assistantId = settings.assistantId;
 
   const email = Session.getActiveUser().getEmail();
   const subject = `${ADDON_TITLE} - summary created`;
-  const template = HtmlService.createTemplateFromFile("summary-creation-notification");
+  const template = HtmlService.createTemplateFromFile(
+    "creation-notification.html"
+  );
 
   let htmlOutput = template.evaluate().getContent();
 
-  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
+  let resultHTML = `
+    <p>Summary file</p>
+    <a href=${fileLink}>Click here to view file</a>
 
-  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
+    <p>Assistant ID:</p>
+    <p>${assistantId}</p>
+  `;
+
+  htmlOutput = htmlOutput.replace("{{content}}", resultHTML);
 
   MailApp.sendEmail({
     to: email,
@@ -36,48 +45,24 @@ const sendSummaryCreationEmail = () => {
     htmlBody: htmlOutput,
   });
 
-  console.log("Sent!")
-}
-
-const sendAssistantCreationEmail = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  let assistantId = settings.assistantId
-
-  const email = Session.getActiveUser().getEmail();
-  const subject = `${ADDON_TITLE} - assistant created`;
-  const template = HtmlService.createTemplateFromFile("assistant-creation-notification");
-
-  let htmlOutput = template.evaluate().getContent();
-
-  let resultHTML = `${assistantId}`
-
-  htmlOutput = htmlOutput.replace("{{assistant_id}}", resultHTML);
-
-  MailApp.sendEmail({
-    to: email,
-    subject: subject,
-    name: ADDON_TITLE,
-    htmlBody: htmlOutput,
-  });
-
-  console.log("Sent!")
-}
+  console.log("Sent!");
+};
 
 const sendSummaryUpdateEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let fileLink = settings.docsFileLink
+  let fileLink = settings.docsFileLink;
 
   const email = Session.getActiveUser().getEmail();
   const subject = `${ADDON_TITLE} - summary updated`;
-  const template = HtmlService.createTemplateFromFile("summary-update-notification");
+  const template = HtmlService.createTemplateFromFile(
+    "summary-update-notification"
+  );
 
   let htmlOutput = template.evaluate().getContent();
 
-  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`
+  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`;
 
   htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
 
@@ -88,14 +73,14 @@ const sendSummaryUpdateEmail = () => {
     htmlBody: htmlOutput,
   });
 
-  console.log("Sent!")
-}
+  console.log("Sent!");
+};
 
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  const currentTimestamp = getCurrentTimeStamp()
+  const currentTimestamp = getCurrentTimeStamp();
   const previousCheckDate = settings.checkTimeStamp;
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
@@ -105,13 +90,17 @@ const replyUnredMessages = () => {
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
-    let lastMessageSender = lastMessage.getFrom()
+    let lastMessageSender = lastMessage.getFrom();
 
-    let formattedMessageSender = formatMessageSender(lastMessageSender)
+    let formattedMessageSender = formatMessageSender(lastMessageSender);
 
     let threadId = thread.getId();
     let message = lastMessage.getPlainBody();
-    let formattedMessage = message.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
+    let formattedMessage = message
+      .split("wrote:")[0]
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .join("\n");
 
     let assistantResponse = null;
 
@@ -120,7 +109,9 @@ const replyUnredMessages = () => {
     let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
 
     let runStatus;
-    while ((runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed") {
+    while (
+      (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
+    ) {
       if (runStatus === "queued") {
         Utilities.sleep(5000); // Add a sleep interval (5 seconds in this case) to avoid constant polling
       }
@@ -128,10 +119,10 @@ const replyUnredMessages = () => {
 
     assistantResponse = getAssistantMessages(assistantThreadId);
 
-    let formattedAssistantResponse = formatAssistantResponse(assistantResponse)
+    let formattedAssistantResponse = formatAssistantResponse(assistantResponse);
 
-    lastMessage.reply(formattedAssistantResponse)
-    thread.markRead()
+    lastMessage.reply(formattedAssistantResponse);
+    thread.markRead();
   });
 
   let newSettings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -147,7 +138,7 @@ const getAllMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let maxEmails = settings.emailsLimit
+  let maxEmails = settings.emailsLimit;
 
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
@@ -156,43 +147,53 @@ const getAllMessages = () => {
       break;
     }
     let threadId = threads[i].getId();
-    let thread = GmailApp.getThreadById(threadId)
-    let threadSubject = thread.getFirstMessageSubject()
-    let threadMessages = thread.getMessages()
-    let allThreadMessages = ""
+    let thread = GmailApp.getThreadById(threadId);
+    let threadSubject = thread.getFirstMessageSubject();
+    let threadMessages = thread.getMessages();
+    let allThreadMessages = "";
     for (let i = 0; i < threadMessages.length; i++) {
-      let threadMessage = threadMessages[i]
-      let messageText = threadMessage.getPlainBody()
-      let formattedMessage = messageText.split('wrote:')[0].split('\n').filter(line => line.trim() !== '').join('\n');
-      allThreadMessages += formattedMessage
+      let threadMessage = threadMessages[i];
+      let messageText = threadMessage.getPlainBody();
+      let formattedMessage = messageText
+        .split("wrote:")[0]
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .join("\n");
+      allThreadMessages += formattedMessage;
     }
     allMessages += `Subject: ${threadSubject}\nMessages:\n${allThreadMessages}\n\n`;
     allThreadMessages = "";
   }
 
-  let blobDoc = Utilities.newBlob(allMessages, 'text/plain', `${USERNAME}-emails.txt`);
+  let blobDoc = Utilities.newBlob(
+    allMessages,
+    "text/plain",
+    `${USERNAME}-emails.txt`
+  );
 
-  sendFileTG(blobDoc)
+  sendFileTG(blobDoc);
 
-  return allMessages
-}
+  return allMessages;
+};
 
 const compareUpdatedDates = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let docsFileLastUpdatedSettings = settings.lastUpdatedDate;
-  let docsFileId = settings.docsFileId
+  let docsFileId = settings.docsFileId;
 
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000)
+  let docsFileLastUpdatedTimeStamp = Math.floor(
+    new Date(docsFileLastUpdated).getTime() / 1000
+  );
 
   if (parseInt(docsFileLastUpdatedSettings) != docsFileLastUpdatedTimeStamp) {
-    return true
+    return true;
   } else {
-    return false
+    return false;
   }
-}
+};
 
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
@@ -206,20 +207,23 @@ const createInboxSummary = () => {
 
   docsFile.getBody().insertParagraph(0, summarizedEmails);
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000);
+  let docsFileLastUpdatedTimeStamp = Math.floor(
+    new Date(docsFileLastUpdated).getTime() / 1000
+  );
 
   let updatedSettings = {
     ...settings,
-    mainFunctionStatus: "finished",
     isSummaryCreated: true,
     isFileCreated: true,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
-    lastUpdatedDate: docsFileLastUpdatedTimeStamp
+    lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
   saveSettings(updatedSettings);
 
-  sendSummaryCreationEmail()
+  createAssistant();
+
+  sendSummaryAndAssistantCreationEmail();
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -234,23 +238,25 @@ const updateInboxSummary = () => {
 
   let docsFileId = settings.docsFileId;
 
-  let docsFile = DocumentApp.openById(docsFileId)
-  let docBody = docsFile.getBody()
+  let docsFile = DocumentApp.openById(docsFileId);
+  let docBody = docsFile.getBody();
 
-  docBody.clear()
+  docBody.clear();
 
-  let inboxEmails = getAllMessages()
-  let summarizedEmails = summarization(inboxEmails)
+  let inboxEmails = getAllMessages();
+  let summarizedEmails = summarization(inboxEmails);
 
-  docBody.insertParagraph(0, summarizedEmails)
+  docBody.insertParagraph(0, summarizedEmails);
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(new Date(docsFileLastUpdated).getTime() / 1000);
+  let docsFileLastUpdatedTimeStamp = Math.floor(
+    new Date(docsFileLastUpdated).getTime() / 1000
+  );
 
   let updatedSettings = {
     ...settings,
-    lastUpdatedDate: docsFileLastUpdatedTimeStamp
+    lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
   saveSettings(updatedSettings);
 
-  sendSummaryUpdateEmail()
+  sendSummaryUpdateEmail();
 };

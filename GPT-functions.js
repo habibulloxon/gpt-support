@@ -136,14 +136,13 @@ const createAssistant = () => {
     let assistantId = getCreatedAssistantId(fileId);
     let updatedSettings = {
       ...settings,
+      mainFunctionStatus: "finished",
       fileId: fileId,
       assistantId: assistantId,
       isAssistantCreated: true
     }
     saveSettings(updatedSettings)
     installTimeDrivenTrigger()
-    // refreshCard();
-    sendAssistantCreationEmail();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
   }

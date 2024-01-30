@@ -4,12 +4,12 @@ const refreshCard = () => {
 };
 
 const confirmAction = () => {
-  var nav = CardService.newNavigation().popToRoot();
+  let nav = CardService.newNavigation().popToRoot();
   return CardService.newActionResponseBuilder().setNavigation(nav).build();
 };
 
 const denyAction = () => {
-  var nav = CardService.newNavigation().popToRoot();
+  let nav = CardService.newNavigation().popToRoot();
   return CardService.newActionResponseBuilder().setNavigation(nav).build();
 };
 
@@ -33,7 +33,7 @@ const handleSummaryUpdateClick = () => {
       .addWidget(confirmButton)
       .addWidget(denyButton);
 
-    var secondCard = CardService.newCardBuilder()
+    let secondCard = CardService.newCardBuilder()
       .setHeader(CardService.newCardHeader().setTitle("Please confirm action"))
       .addSection(secondCardSection)
       .addSection(
@@ -45,28 +45,11 @@ const handleSummaryUpdateClick = () => {
       )
       .build();
 
-    var nav = CardService.newNavigation().pushCard(secondCard);
+    let nav = CardService.newNavigation().pushCard(secondCard);
 
     return CardService.newActionResponseBuilder().setNavigation(nav).build();
   } else {
   }
-};
-
-const main = () => {
-  // installSummaryCreationTriggers();
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-
-  console.log("main function finished");
-
-  let updatedSettings = {
-    ...settings,
-    isFileCreated: true,
-    mainFunctionStatus: "finished",
-  };
-  saveSettings(updatedSettings);
-
-  sendAssistantCreationEmail()
 };
 
 /**
@@ -124,11 +107,14 @@ const handleSaveClick = (e) => {
 
   let apiKeyStatus = checkIsApiKeyProper(apiKey);
   let functionStatus;
+  let openAiApiKey;
 
   if (apiKeyStatus) {
     functionStatus = "running";
+    openAiApiKey = apiKey
   } else {
     functionStatus = "error";
+    openAiApiKey = ""
   }
 
   let progressSettings = {
@@ -137,49 +123,88 @@ const handleSaveClick = (e) => {
     companyName: companyName,
     assistantName: assistantName,
     emailsLimit: emailsLimit,
-    openAiApiKey: apiKey,
+    openAiApiKey: openAiApiKey,
     autoReply: autoReply,
   };
   saveSettings(progressSettings);
 
-  if(apiKeyStatus) {
-    ScriptApp.newTrigger("main")
-    .timeBased()
-    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
-    .create();
+  if (apiKeyStatus) {
+    installSummaryCreationTriggers();
   }
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
 
+const updateAssistantInstructions = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const OPENAI_API_KEY = settings.openAiApiKey;
+  const assistantId = settings.assistantId;
+  const companyName = settings.companyName;
+  const name = settings.assistantName;
+  const fileId = settings.fileId;
+
+  let url = `https://api.openai.com/v1/assistants/${assistantId}`;
+
+  let headers = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + OPENAI_API_KEY,
+    "OpenAI-Beta": "assistants=v1",
+  };
+
+  let payload = {
+    instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
+    tools: [{ type: "retrieval" }],
+    model: "gpt-4-1106-preview",
+    file_ids: [`${fileId}`],
+  };
+
+  let options = {
+    method: "post",
+    contentType: "application/json",
+    headers: headers,
+    payload: JSON.stringify(payload),
+  };
+
+  let response = UrlFetchApp.fetch(url, options);
+  console.log(JSON.stringify(response));
+};
+
 const handleSettingsUpdateClick = (e) => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  const previosCompanyName = settings.companyName;
-  const previosAssistantName = settings.assistantName;
-  const previosApiKey = settings.openAiApiKey;
-  const previosEmailsLimit = settings.emailsLimit;
-  const previosAutoReply = settings.autoReply;
+  const {
+    companyName: prevCompanyName,
+    assistantName: prevAssistantName,
+    openAiApiKey: prevApiKey,
+    emailsLimit: prevEmailsLimit,
+    autoReply: prevAutoReply,
+  } = settings;
 
-  let currentSelectedAutoReplyValue =
-    e.commonEventObject.formInputs.radio_field;
+  const currentSelectedAutoReplyValue =
+    e.commonEventObject.formInputs.radio_field.stringInputs.value[0];
 
-  let currentCompanyName = e.formInput.company_name_input;
-  let currentAssistantName = e.formInput.assistant_name_input;
-  let currentApiKey = e.formInput.api_key_input;
-  let currentEmailsLimit = e.formInput.emails_limit_input;
-  let currentAutoReply = currentSelectedAutoReplyValue.stringInputs.value[0];
+  const {
+    company_name_input: currentCompanyName,
+    assistant_name_input: currentAssistantName,
+    api_key_input: currentApiKey,
+    emails_limit_input: currentEmailsLimit,
+  } = e.formInput;
 
-  if (
-    previosCompanyName !== currentCompanyName ||
-    previosAssistantName !== currentAssistantName ||
-    previosApiKey !== currentApiKey ||
-    previosEmailsLimit !== currentEmailsLimit ||
-    previosAutoReply !== currentAutoReply
-  ) {
-    let updatedSettings = {
+  const currentAutoReply = currentSelectedAutoReplyValue;
+
+  const settingsChanged =
+    prevCompanyName !== currentCompanyName ||
+    prevAssistantName !== currentAssistantName ||
+    prevApiKey !== currentApiKey ||
+    prevEmailsLimit !== currentEmailsLimit ||
+    prevAutoReply !== currentAutoReply;
+
+  if (settingsChanged) {
+    const updatedSettings = {
       ...settings,
       companyName: currentCompanyName,
       assistantName: currentAssistantName,
@@ -191,6 +216,16 @@ const handleSettingsUpdateClick = (e) => {
     saveSettings(updatedSettings);
   } else {
     Logger.log("There is nothing to change");
+  }
+
+  const assistantChanged =
+    prevCompanyName !== currentCompanyName ||
+    prevAssistantName !== currentAssistantName;
+
+  if (assistantChanged) {
+    updateAssistantInstructions();
+  } else {
+    Logger.log("There is nothing to change in assistant");
   }
 };
 

@@ -22,6 +22,7 @@ const installSummaryCreationTriggers = () => {
     .timeBased()
     .at(new Date((getCurrentTimeStamp() + 1) * 1000))
     .create();
+  console.log("creation functions were added as a triggers")
 };
 
 const installSummaryUpdateTriggers = () => {
