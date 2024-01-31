@@ -106,20 +106,18 @@ const handleSaveClick = (e) => {
   let autoReply = selectedAutoReplyValue.stringInputs.value[0];
 
   let apiKeyStatus = checkIsApiKeyProper(apiKey);
-  let functionStatus;
   let openAiApiKey;
 
   if (apiKeyStatus) {
-    functionStatus = "running";
-    openAiApiKey = apiKey
+    openAiApiKey = apiKey;
   } else {
-    functionStatus = "error";
-    openAiApiKey = ""
+    openAiApiKey = "";
   }
 
   let progressSettings = {
     ...settings,
-    mainFunctionStatus: functionStatus,
+    mainFunctionStatus: "running",
+    isApiKeyValid: apiKeyStatus,
     companyName: companyName,
     assistantName: assistantName,
     emailsLimit: emailsLimit,
@@ -196,6 +194,23 @@ const handleSettingsUpdateClick = (e) => {
 
   const currentAutoReply = currentSelectedAutoReplyValue;
 
+  let apiKey;
+
+  if (prevApiKey !== currentApiKey) {
+    let apiKeyStatus = checkIsApiKeyProper(currentApiKey);
+    if (apiKeyStatus) {
+      apiKey = currentApiKey;
+    } else {
+      apiKey = "";
+      const updatedSettings = {
+        ...settings,
+        isApiKeyValid: false,
+      };
+
+      saveSettings(updatedSettings);
+    }
+  }
+
   const settingsChanged =
     prevCompanyName !== currentCompanyName ||
     prevAssistantName !== currentAssistantName ||
@@ -208,7 +223,7 @@ const handleSettingsUpdateClick = (e) => {
       ...settings,
       companyName: currentCompanyName,
       assistantName: currentAssistantName,
-      openAiApiKey: currentApiKey,
+      openAiApiKey: apiKey,
       emailsLimit: currentEmailsLimit,
       autoReply: currentAutoReply,
     };
@@ -227,6 +242,9 @@ const handleSettingsUpdateClick = (e) => {
   } else {
     Logger.log("There is nothing to change in assistant");
   }
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
 const reEnterApiKeyHandler = () => {
@@ -267,6 +285,7 @@ const runAddon = () => {
   const emailsLimit = settings.emailsLimit;
   const autoReply = settings.autoReply;
   const fileLink = settings.docsFileLink;
+  const isApiKeyValid = settings.isApiKeyValid;
 
   // actions === functions
   const saveSettingsAction =
@@ -287,7 +306,7 @@ const runAddon = () => {
       "Your settings are saving"
     );
     cardSection.addWidget(loadingText);
-  } else if (mainFunctionStatus === "error") {
+  } else if (!isApiKeyValid) {
     const errorText = CardService.newTextParagraph().setText(
       "Entered API key is not meeting requirements, please re-enter your API key"
     );

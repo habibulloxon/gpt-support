@@ -80,17 +80,26 @@ const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
+  let autoReply = settings.autoReply
+
+  if (autoReply === "false") {
+    return
+  }
+
   const currentTimestamp = getCurrentTimeStamp();
   const previousCheckDate = settings.checkTimeStamp;
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
   const searchedThreads = GmailApp.search(searchQuery);
 
+  let checkTimeStamp;
+
   searchedThreads.forEach((thread) => {
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
     let lastMessageSender = lastMessage.getFrom();
+    let lastMessageTimeStamp = lastMessage.getDate()
 
     let formattedMessageSender = formatMessageSender(lastMessageSender);
 
