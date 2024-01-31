@@ -3,53 +3,36 @@ const refreshCard = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
-const confirmAction = () => {
-  let nav = CardService.newNavigation().popToRoot();
-  return CardService.newActionResponseBuilder().setNavigation(nav).build();
+const confirmSummaryRegenerateHandler = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let progressSettings = {
+    ...settings,
+    updateFunctionStatus: "running",
+  };
+
+  saveSettings(progressSettings);
+
+  installSummaryUpdateTriggers()
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
-const denyAction = () => {
-  let nav = CardService.newNavigation().popToRoot();
-  return CardService.newActionResponseBuilder().setNavigation(nav).build();
-};
+const denySummaryRegenerateHandler = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-const handleSummaryUpdateClick = () => {
-  let isFileChanged = compareUpdatedDates();
+  let progressSettings = {
+    ...settings,
+    updateFunctionStatus: "idle",
+  };
 
-  if (isFileChanged) {
-    const confirmAction =
-      CardService.newAction().setFunctionName("confirmAction");
-    const denyAction = CardService.newAction().setFunctionName("denyAction");
+  saveSettings(progressSettings);
 
-    const confirmButton = CardService.newTextButton()
-      .setText("Yes")
-      .setOnClickAction(confirmAction);
-
-    const denyButton = CardService.newTextButton()
-      .setText("No")
-      .setOnClickAction(denyAction);
-
-    const secondCardSection = CardService.newCardSection()
-      .addWidget(confirmButton)
-      .addWidget(denyButton);
-
-    let secondCard = CardService.newCardBuilder()
-      .setHeader(CardService.newCardHeader().setTitle("Please confirm action"))
-      .addSection(secondCardSection)
-      .addSection(
-        CardService.newCardSection().addWidget(
-          CardService.newTextParagraph().setText(
-            "You have changed original summary, do you want to override it?"
-          )
-        )
-      )
-      .build();
-
-    let nav = CardService.newNavigation().pushCard(secondCard);
-
-    return CardService.newActionResponseBuilder().setNavigation(nav).build();
-  } else {
-  }
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
 /**
@@ -262,6 +245,108 @@ const reEnterApiKeyHandler = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
+const deleteFile = (assistantId, fileId, apiKey) => {
+  var url = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`;
+  var headers = {
+    Authorization: "Bearer " + apiKey,
+    "Content-Type": "application/json",
+    "OpenAI-Beta": "assistants=v1",
+  };
+
+  var options = {
+    method: "DELETE",
+    headers: headers,
+  };
+
+  UrlFetchApp.fetch(url, options);
+};
+
+const updateAssistantFile = (apiKey, fileId, assistantId) => {
+  let url = `https://api.openai.com/v1/assistants/${assistantId}`;
+
+  var headers = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + apiKey,
+    "OpenAI-Beta": "assistants=v1",
+  };
+
+  var payload = {
+    file_ids: [`${fileId}`],
+  };
+
+  var options = {
+    method: "POST",
+    headers: headers,
+    payload: JSON.stringify(payload),
+  };
+
+  UrlFetchApp.fetch(url, options);
+};
+
+const confirmAssistantUpdateHandler = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let progressSettings = {
+    ...settings,
+    updateFunctionStatus: "running",
+  };
+
+  saveSettings(progressSettings);
+
+  const assistantId = settings.assistantId;
+  const apiKey = settings.openAiApiKey;
+
+  const oldFileId = settings.fileId;
+  deleteFile(assistantId, oldFileId, apiKey);
+
+  const newFileId = getUploadedFileId();
+
+  updateAssistantFile(apiKey, newFileId, assistantId);
+
+  let updatedSettings = {
+    ...settings,
+    updateFunctionStatus: "finished",
+    fileId: newFileId,
+    isFileUpdated: false,
+  };
+
+  saveSettings(updatedSettings);
+  sendSummaryUpdateEmail();
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+};
+
+const denyAssistantUpdateHandler = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let updatedSettings = {
+    ...settings,
+    isFileUpdated: false,
+  };
+
+  saveSettings(updatedSettings);
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+};
+
+const regenerateInboxSummaryHandle = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  let progressSettings = {
+    ...settings,
+    updateFunctionStatus: "pending",
+  };
+
+  saveSettings(progressSettings);
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+};
+
 const runAddon = () => {
   // creating initial settings
   createSettings();
@@ -290,14 +375,24 @@ const runAddon = () => {
   // actions === functions
   const saveSettingsAction =
     CardService.newAction().setFunctionName("handleSaveClick");
-  const updateInboxSummaryAction = CardService.newAction().setFunctionName(
-    "handleSummaryUpdateClick"
+  const regenerateInboxSummaryAction = CardService.newAction().setFunctionName(
+    "regenerateInboxSummaryHandle"
   );
   const updateUserSettingsAction = CardService.newAction().setFunctionName(
     "handleSettingsUpdateClick"
   );
   const reEnterApiKeyAction = CardService.newAction().setFunctionName(
     "reEnterApiKeyHandler"
+  );
+  const denyUpdateAssistantFileAction = CardService.newAction().setFunctionName(
+    "denyAssistantUpdateHandler"
+  );
+  const confirmUpdateAssistantFileAction =
+    CardService.newAction().setFunctionName("confirmAssistantUpdateHandler");
+  const confirmSummaryRegenerateAction =
+    CardService.newAction().setFunctionName("confirmSummaryRegenerateHandler");
+  const denySummaryRegenerateAction = CardService.newAction().setFunctionName(
+    "denySummaryRegenerateHandler"
   );
 
   // card rendering based on several conditions
@@ -306,6 +401,36 @@ const runAddon = () => {
       "Your settings are saving"
     );
     cardSection.addWidget(loadingText);
+  } else if (isFileUpdated) {
+    const notificationText = CardService.newTextParagraph().setText(
+      "You have changed your summary file do you want to update assistant file?"
+    );
+    cardSection.addWidget(notificationText);
+
+    const updateAssistantButtonConfirm = CardService.newTextButton()
+      .setText("Yes, update assistant")
+      .setOnClickAction(confirmUpdateAssistantFileAction);
+    cardSection.addWidget(updateAssistantButtonConfirm);
+
+    const updateAssistantButtonDeny = CardService.newTextButton()
+      .setText("No, do not update assistant")
+      .setOnClickAction(denyUpdateAssistantFileAction);
+    cardSection.addWidget(updateAssistantButtonDeny);
+  } else if (updateFunctionStatus === "pending") {
+    const notificationText = CardService.newTextParagraph().setText(
+      "Do you want to regenerate new summary and override current one?"
+    );
+    cardSection.addWidget(notificationText);
+
+    const confirmButton = CardService.newTextButton()
+      .setText("Yes")
+      .setOnClickAction(confirmSummaryRegenerateAction);
+    cardSection.addWidget(confirmButton);
+
+    const denyButton = CardService.newTextButton()
+      .setText("No")
+      .setOnClickAction(denySummaryRegenerateAction);
+    cardSection.addWidget(denyButton);
   } else if (!isApiKeyValid) {
     const errorText = CardService.newTextParagraph().setText(
       "Entered API key is not meeting requirements, please re-enter your API key"
@@ -377,10 +502,10 @@ const runAddon = () => {
 
       cardSection.addWidget(divider);
 
-      const updateSummaryFileBtn = CardService.newTextButton()
-        .setText("Update summary file")
-        .setOnClickAction(updateInboxSummaryAction);
-      cardSection.addWidget(updateSummaryFileBtn);
+      const regenerateSummaryFileBtn = CardService.newTextButton()
+        .setText("Regenerate summary file")
+        .setOnClickAction(regenerateInboxSummaryAction);
+      cardSection.addWidget(regenerateSummaryFileBtn);
 
       cardSection.addWidget(divider);
 
@@ -439,7 +564,7 @@ const runAddon = () => {
 
   const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
-    .setHeader(CardService.newCardHeader().setTitle("Enter information:"))
+    .setHeader(CardService.newCardHeader().setTitle("Configure addon"))
     .addSection(cardSection)
     .build();
   return card;

@@ -76,6 +76,14 @@ const sendSummaryUpdateEmail = () => {
   console.log("Sent!");
 };
 
+const convertDateToTimeStamp = (date) => {
+  let dateObject = new Date(date);
+  let parsedDateObject = Date.parse(dateObject);
+  let timeStamp = Math.floor(parsedDateObject / 1000);
+
+  return timeStamp;
+}
+
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
@@ -86,20 +94,21 @@ const replyUnredMessages = () => {
     return
   }
 
-  const currentTimestamp = getCurrentTimeStamp();
   const previousCheckDate = settings.checkTimeStamp;
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
   const searchedThreads = GmailApp.search(searchQuery);
 
-  let checkTimeStamp;
+  let lastMessageTimeStamp;
 
   searchedThreads.forEach((thread) => {
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
     let lastMessageSender = lastMessage.getFrom();
-    let lastMessageTimeStamp = lastMessage.getDate()
+    let lastMessageDate = lastMessage.getDate();
+
+    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate)
 
     let formattedMessageSender = formatMessageSender(lastMessageSender);
 
@@ -122,7 +131,7 @@ const replyUnredMessages = () => {
       (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
     ) {
       if (runStatus === "queued") {
-        Utilities.sleep(5000); // Add a sleep interval (5 seconds in this case) to avoid constant polling
+        Utilities.sleep(5000);
       }
     }
 
@@ -138,7 +147,7 @@ const replyUnredMessages = () => {
 
   let updatedSettings = {
     ...newSettings,
-    checkTimeStamp: currentTimestamp,
+    checkTimeStamp: lastMessageTimeStamp,
   };
   saveSettings(updatedSettings);
 };
@@ -263,6 +272,7 @@ const updateInboxSummary = () => {
 
   let updatedSettings = {
     ...settings,
+    updateFunctionStatus: "finished",
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
   saveSettings(updatedSettings);
