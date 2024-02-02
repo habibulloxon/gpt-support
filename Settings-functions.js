@@ -1,7 +1,3 @@
-/**
- * Saves settings to user properties
- * @param {object} settings - settings object.
- */
 const saveSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
@@ -14,9 +10,71 @@ const saveSettings = (settings) => {
     let temp = userProperties.getProperty("settingsAPB");
     let parsedSettings = JSON.parse(temp);
     console.log("Settings: ", parsedSettings);
-    refreshCard()
+    refreshCard();
   } catch (error) {
     console.error("Error saving or retrieving settings:", error);
+  }
+};
+
+const saveSettingsFlags = (settings) => {
+  try {
+    let userProperties = PropertiesService.getUserProperties();
+    if (settings) {
+      userProperties.setProperty("settingsFlags", JSON.stringify(settings));
+      console.log("Settings were successfully saved in settingsFlags");
+    } else {
+      console.error("Error: 'settings' is null or undefined.");
+    }
+
+    let settingsToLog = JSON.parse(userProperties.getProperty("settingsFlags"));
+    console.log("settingsFlags: ", settingsToLog);
+  } catch {
+    console.error(
+      "Error saving or retrieving settings in settingsFlags:",
+      error
+    );
+  }
+};
+
+const saveSettingsUserInfo = (settings) => {
+  try {
+    let userProperties = PropertiesService.getUserProperties();
+    if (settings) {
+      userProperties.setProperty("settingsUserInfo", JSON.stringify(settings));
+      console.log("Settings were successfully saved in settingsUserInfo");
+    } else {
+      console.error("Error: 'settings' is null or undefined.");
+    }
+
+    let settingsToLog = JSON.parse(
+      userProperties.getProperty("settingsUserInfo")
+    );
+    console.log("settingsUserInfo: ", settingsToLog);
+  } catch {
+    console.error(
+      "Error saving or retrieving settings in settingsUserInfo:",
+      error
+    );
+  }
+};
+
+const saveSettingsAddon = (settings) => {
+  try {
+    let userProperties = PropertiesService.getUserProperties();
+    if (settings) {
+      userProperties.setProperty("settingsAddon", JSON.stringify(settings));
+      console.log("Settings were successfully saved in settingsAddon");
+    } else {
+      console.error("Error: 'settings' is null or undefined.");
+    }
+
+    let settingsToLog = JSON.parse(userProperties.getProperty("settingsAddon"));
+    console.log("settingsAddon: ", settingsToLog);
+  } catch {
+    console.error(
+      "Error saving or retrieving settings in settingsAddon:",
+      error
+    );
   }
 };
 
@@ -25,9 +83,15 @@ const createSettings = () => {
 
   let userProperties = PropertiesService.getUserProperties();
   let settings = userProperties.getProperty("settingsAPB");
-  let isUserPropsExist = settings !== null && settings !== undefined;
 
-  let updatedSettings = {}
+  let isUserPropsExist;
+  if (settings !== null && settings !== undefined) {
+    isUserPropsExist = true;
+  } else {
+    isUserPropsExist = false;
+  }
+
+  let updatedSettings = {};
 
   if (!isUserPropsExist) {
     updatedSettings = {
@@ -47,17 +111,17 @@ const createSettings = () => {
       isFileUpdated: false,
       isAssistantCreated: false,
       threadIds: [],
-      checkTimeStamp: pastTimestamp
-    }
+      checkTimeStamp: pastTimestamp,
+    };
     saveSettings(updatedSettings);
 
-    console.log("Settings were created")
+    console.log("Settings were created");
   } else {
-    let docStatus = compareUpdatedDates()
+    let docStatus = compareUpdatedDates();
     updatedSettings = {
       ...settings,
-      isFileUpdated: docStatus
-    }
+      isFileUpdated: docStatus,
+    };
     saveSettings(updatedSettings);
   }
-}
+};
