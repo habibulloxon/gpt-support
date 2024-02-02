@@ -371,6 +371,7 @@ const runAddon = () => {
   const autoReply = settings.autoReply;
   const fileLink = settings.docsFileLink;
   const isApiKeyValid = settings.isApiKeyValid;
+  const isFileUpdated = settings.isFileUpdated
 
   // actions === functions
   const saveSettingsAction =
@@ -447,8 +448,8 @@ const runAddon = () => {
     );
     cardSection.addWidget(loadingText);
   } else {
-    const isFileCreated = settings.isFileCreated;
-    if (isFileCreated === false) {
+    const docFile = settings.docsFileLink;
+    if (docFile === "") {
       const companyNameInput = CardService.newTextInput()
         .setFieldName("company_name_input")
         .setTitle("Enter company name")

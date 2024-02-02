@@ -29,8 +29,6 @@ const createSettings = () => {
 
   let updatedSettings = {}
 
-  let docStatus = compareUpdatedDates()
-
   if (!isUserPropsExist) {
     updatedSettings = {
       assistantName: "Zeva",
@@ -46,7 +44,6 @@ const createSettings = () => {
       docsFileId: "",
       docsFileLink: "",
       lastUpdatedDate: "",
-      isFileCreated: false,
       isFileUpdated: false,
       isAssistantCreated: false,
       threadIds: [],
@@ -56,8 +53,9 @@ const createSettings = () => {
 
     console.log("Settings were created")
   } else {
+    let docStatus = compareUpdatedDates()
     updatedSettings = {
-      ...settings, 
+      ...settings,
       isFileUpdated: docStatus
     }
     saveSettings(updatedSettings);

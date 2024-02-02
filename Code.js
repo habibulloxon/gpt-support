@@ -201,6 +201,12 @@ const compareUpdatedDates = () => {
   let docsFileLastUpdatedSettings = settings.lastUpdatedDate;
   let docsFileId = settings.docsFileId;
 
+  if (!docsFileId) {
+    // Handle the case where docsFileId is empty
+    console.error("Error: docsFileId is empty.");
+    return false; // or handle it based on your use case
+  }
+
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
   let docsFileLastUpdatedTimeStamp = Math.floor(
     new Date(docsFileLastUpdated).getTime() / 1000
@@ -232,7 +238,6 @@ const createInboxSummary = () => {
   let updatedSettings = {
     ...settings,
     isSummaryCreated: true,
-    isFileCreated: true,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
