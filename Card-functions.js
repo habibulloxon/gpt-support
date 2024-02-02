@@ -4,8 +4,8 @@ const refreshCard = () => {
 };
 
 const confirmSummaryRegenerateHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let progressSettings = {
     ...settings,
@@ -21,8 +21,8 @@ const confirmSummaryRegenerateHandler = () => {
 };
 
 const denySummaryRegenerateHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let progressSettings = {
     ...settings,
@@ -77,8 +77,8 @@ const checkIsApiKeyProper = (apiKey) => {
 };
 
 const handleSaveClick = (e) => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let selectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
 
@@ -118,8 +118,8 @@ const handleSaveClick = (e) => {
 };
 
 const updateAssistantInstructions = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+// const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   const OPENAI_API_KEY = settings.openAiApiKey;
   const assistantId = settings.assistantId;
@@ -154,8 +154,8 @@ const updateAssistantInstructions = () => {
 };
 
 const handleSettingsUpdateClick = (e) => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   const {
     companyName: prevCompanyName,
@@ -231,8 +231,8 @@ const handleSettingsUpdateClick = (e) => {
 };
 
 const reEnterApiKeyHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let updatedSettings = {
     ...settings,
@@ -284,8 +284,8 @@ const updateAssistantFile = (apiKey, fileId, assistantId) => {
 };
 
 const confirmAssistantUpdateHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let progressSettings = {
     ...settings,
@@ -318,8 +318,8 @@ const confirmAssistantUpdateHandler = () => {
 };
 
 const denyAssistantUpdateHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let updatedSettings = {
     ...settings,
@@ -333,8 +333,8 @@ const denyAssistantUpdateHandler = () => {
 };
 
 const regenerateInboxSummaryHandle = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let progressSettings = {
     ...settings,
@@ -356,8 +356,8 @@ const runAddon = () => {
   const cardSection = CardService.newCardSection();
 
   // user properties === settings
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   // conditions
   const mainFunctionStatus = settings.mainFunctionStatus;

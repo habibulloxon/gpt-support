@@ -1,16 +1,16 @@
-const deleteUserProperties = () => {
-  var userProperties = PropertiesService.getUserProperties();
-  userProperties.deleteAllProperties();
+// const deleteUserProperties = () => {
+//   var userProperties = PropertiesService.getUserProperties();
+//   userProperties.deleteAllProperties();
 
-  console.log("All properties were deleted")
-}
+//   console.log("All properties were deleted")
+// }
 
-function getSettingsToConsole() {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+// function getSettingsToConsole() {
+//   const userProperties = PropertiesService.getUserProperties();
+//   const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  console.log(settings)
-}
+//   console.log(settings)
+// }
 
 const sendFileTG = (file) => {
   let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
@@ -31,8 +31,8 @@ const sendFileTG = (file) => {
 }
 
 function logText() {
-  const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+//  const userProperties = PropertiesService.getUserProperties();
+//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
   let temporarySettings = { ...settings, isRunning: "running" };
   saveSettings(temporarySettings);

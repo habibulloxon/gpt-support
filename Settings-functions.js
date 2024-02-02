@@ -80,19 +80,48 @@ const createSettings = () => {
   let newAddonSettings = {};
 
   if (!isBooleanSettingsExist) {
-    newBooleanSettings = {};
+    newBooleanSettings = {
+      isFileUpdated: false,
+      isAssistantCreated: false,
+      isApiKeyValid: false,
+    };
 
     saveBooleanSettings(newBooleanSettings);
+  } else {
+    let docsFileStatus = compareUpdatedDates()
+    let updatedBooleanSettings = {
+      ...booleanSettings,
+      isFileUpdated: docsFileStatus
+    };
+
+    saveBooleanSettings(updatedBooleanSettings);
   }
 
   if (!isUserSettingsExist) {
-    newUserSettings = {};
+    newUserSettings = {
+      assistantName: "Zeva",
+      openAiApiKey: "",
+      companyName: "",
+      emailsLimit: 100,
+      autoReply: "true",
+      model: ""
+    };
 
     saveUserSettings(newUserSettings);
   }
 
   if (!isAddonSettingsExist) {
-    newAddonSettings = {};
+    newAddonSettings = {
+      fileId: "",
+      assistantId: "",
+      docsFileId: "",
+      docsFileLink: "",
+      lastUpdatedDate: "",
+      mainFunctionStatus: "idle",
+      updateFunctionStatus: "idle",
+      threadIds: [],
+      checkTimeStamp: pastTimestamp
+    };
 
     saveAddonSettings(newAddonSettings);
   }

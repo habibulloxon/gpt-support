@@ -1,13 +1,8 @@
-/**
- * Summirizes all emails and create template email
- * @param {string} input - all emails.
- * @returns {string} - summarized template.
- */
 const summarization = (input) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let apiKey = settings.openAiApiKey
+  let apiKey = userSettings.openAiApiKey;
 
   try {
     const url = "https://api.openai.com/v1/chat/completions";
@@ -35,13 +30,11 @@ const summarization = (input) => {
         temperature: 0,
       }),
     };
-    const response = JSON.parse(
-      UrlFetchApp.fetch(url, options),
-    );
+    const response = JSON.parse(UrlFetchApp.fetch(url, options));
 
-    console.log("responses", response)
+    console.log("responses", response);
 
-    let summarizedText = response['choices'][0]['message']['content'];
+    let summarizedText = response["choices"][0]["message"]["content"];
     return summarizedText;
   } catch (error) {
     console.error("Error in summarization:", error);
@@ -54,13 +47,21 @@ const summarization = (input) => {
  */
 const getUploadedFileId = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  let fileId = settings.docsFileId;
-  let apiKey = settings.openAiApiKey
-  let docsFile = DocumentApp.openById(fileId)
-  let docBody = docsFile.getBody().getText()
-  let blobDoc = Utilities.newBlob(docBody, 'text/plain', `${USERNAME}-emails.txt`);
-  sendFileTG(blobDoc)
+
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+
+  let fileId = addonSettings.docsFileId;
+  let apiKey = userSettings.openAiApiKey;
+
+  let docsFile = DocumentApp.openById(fileId);
+  let docBody = docsFile.getBody().getText();
+  let blobDoc = Utilities.newBlob(
+    docBody,
+    "text/plain",
+    `${USERNAME}-emails.txt`
+  );
+  sendFileTG(blobDoc);
   try {
     let url = "https://api.openai.com/v1/files";
     let headers = {
@@ -81,7 +82,7 @@ const getUploadedFileId = () => {
   } catch (error) {
     console.error("Error in uploading file", error);
   }
-}
+};
 
 /**
  * Creates assistant in OpenAI
@@ -90,11 +91,11 @@ const getUploadedFileId = () => {
  */
 const getCreatedAssistantId = (fileId) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let companyName = settings.companyName
-  let apiKey = settings.openAiApiKey
-  let name = settings.assistantName
+  let companyName = userSettings.companyName;
+  let apiKey = userSettings.openAiApiKey;
+  let name = userSettings.assistantName;
 
   let url = "https://api.openai.com/v1/assistants";
   try {
@@ -107,7 +108,7 @@ const getCreatedAssistantId = (fileId) => {
       name: `${USERNAME}-assistant`,
       description: `Support bot of ${USERNAME}`,
       instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
-      tools: [{ "type": "retrieval" }],
+      tools: [{ type: "retrieval" }],
       model: "gpt-4-1106-preview", // gpt-4-1106-preview
       file_ids: [`${fileId}`],
     };
@@ -123,26 +124,38 @@ const getCreatedAssistantId = (fileId) => {
   } catch (error) {
     console.error("Error in creating assistant", error);
   }
-}
+};
 
 /**
  * Creates assistant with file in OpenAI
  */
 const createAssistant = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+
   try {
     let fileId = getUploadedFileId();
     let assistantId = getCreatedAssistantId(fileId);
-    let updatedSettings = {
-      ...settings,
+
+    let updatedAddonSettings = {
+      ...addonSettings,
       mainFunctionStatus: "finished",
       fileId: fileId,
       assistantId: assistantId,
-      isAssistantCreated: true
-    }
-    saveSettings(updatedSettings)
-    installTimeDrivenTrigger()
+    };
+    saveAddonSettings(updatedAddonSettings);
+
+    let updatedBooleanSettings = {
+      ...booleanSettings,
+      isAssistantCreated: true,
+    };
+    saveBooleanSettings(updatedBooleanSettings);
+
+    installTimeDrivenTrigger();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
   }
@@ -154,29 +167,29 @@ const createAssistant = () => {
  */
 const createNewThread = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let apiKey = settings.openAiApiKey
+  let apiKey = userSettings.openAiApiKey;
   try {
-    let url = 'https://api.openai.com/v1/threads';
+    let url = "https://api.openai.com/v1/threads";
     let headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v1'
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "assistants=v1",
     };
     let options = {
-      'method': 'post',
-      'headers': headers,
-      'payload': JSON.stringify({})
+      method: "post",
+      headers: headers,
+      payload: JSON.stringify({}),
     };
     let response = UrlFetchApp.fetch(url, options);
     let result = JSON.parse(response);
     let threadId = result.id;
     return threadId;
   } catch (error) {
-    console.error('Error in creating new thread:', error);
+    console.error("Error in creating new thread:", error);
   }
-}
+};
 
 /**
  * Checks is there connection of email thread and assistant thread in properties
@@ -185,9 +198,9 @@ const createNewThread = () => {
  */
 const getAssistantThreadId = (emailThreadId) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  const settingsThreadIds = settings.threadIds;
-  let assistantThread = null
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const settingsThreadIds = addonSettings.threadIds;
+  let assistantThread = null;
   for (let object of settingsThreadIds) {
     let key = Object.keys(object)[0];
     if (key === emailThreadId) {
@@ -199,16 +212,16 @@ const getAssistantThreadId = (emailThreadId) => {
     let newAssistantThreadId = createNewThread();
     let newThreadIds = { [emailThreadId]: newAssistantThreadId };
     settingsThreadIds.push(newThreadIds);
-    let updatedSettings = {
+    let updatedAddonSettings = {
       ...settings,
-      threadIds: settingsThreadIds
-    }
-    saveSettings(updatedSettings);
+      threadIds: settingsThreadIds,
+    };
+    saveAddonSettings(updatedAddonSettings);
     return newAssistantThreadId;
   } else {
     return assistantThread;
   }
-}
+};
 
 /**
  * Adds message to particullar thread
@@ -218,61 +231,67 @@ const getAssistantThreadId = (emailThreadId) => {
  */
 const addMessageToAssistantThread = (assistantThreadId, message) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let apiKey = settings.openAiApiKey
+  let apiKey = userSettings.openAiApiKey;
   try {
     let url = `https://api.openai.com/v1/threads/${assistantThreadId}/messages`;
     let headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v1'
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "assistants=v1",
     };
     let payload = {
-      "role": "user",
-      "content": message
+      role: "user",
+      content: message,
     };
     let options = {
-      'method': 'post',
-      'headers': headers,
-      'payload': JSON.stringify(payload)
+      method: "post",
+      headers: headers,
+      payload: JSON.stringify(payload),
     };
     let response = UrlFetchApp.fetch(url, options);
     let result = JSON.parse(response);
     let messageId = result.id;
     return messageId;
   } catch (error) {
-    console.error(`Error in adding message to thread ID: ${assistantThreadId}:`, error);
+    console.error(
+      `Error in adding message to thread ID: ${assistantThreadId}:`,
+      error
+    );
   }
-}
+};
 
 /**
  * Runs thread under specific id
- * 
+ *
  * @param {string} threadId - assistant thread id
  * @returns {integer} - run id.
  */
 const runAssistantThread = (threadId, user) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
-  const assistantId = settings.assistantId
 
-  let apiKey = settings.openAiApiKey
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  const assistantId = addonSettings.assistantId;
+  const apiKey = userSettings.openAiApiKey;
+
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/runs`;
     let headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v1'
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "assistants=v1",
     };
     let payload = {
-      'assistant_id': assistantId,
-      'additional_instructions': `Please address the user as ${user}.`,
+      assistant_id: assistantId,
+      additional_instructions: `Please address the user as ${user}.`,
     };
     let options = {
-      'method': 'post',
-      'headers': headers,
-      'payload': JSON.stringify(payload)
+      method: "post",
+      headers: headers,
+      payload: JSON.stringify(payload),
     };
     let response = UrlFetchApp.fetch(url, options);
     let result = JSON.parse(response);
@@ -281,7 +300,7 @@ const runAssistantThread = (threadId, user) => {
   } catch (error) {
     console.error(`Error in running thread ID: ${threadId}:`, error);
   }
-}
+};
 
 /**
  * Retrieves thread run status
@@ -291,28 +310,31 @@ const runAssistantThread = (threadId, user) => {
  */
 const retrieveRunStatus = (threadId, runId) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let apiKey = settings.openAiApiKey
+  const apiKey = userSettings.openAiApiKey;
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/runs/${runId}`;
     let headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v1'
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "assistants=v1",
     };
     let options = {
-      'method': 'get',
-      'headers': headers
+      method: "get",
+      headers: headers,
     };
     let response = UrlFetchApp.fetch(url, options);
     let result = JSON.parse(response);
     let runStatus = result.status;
     return runStatus;
   } catch (error) {
-    console.error(`Error in retrieving run status ID: ${runId} of thread ID: ${threadId}:`, error);
+    console.error(
+      `Error in retrieving run status ID: ${runId} of thread ID: ${threadId}:`,
+      error
+    );
   }
-}
+};
 
 /**
  * Gets assistant messages
@@ -321,28 +343,32 @@ const retrieveRunStatus = (threadId, runId) => {
  */
 const getAssistantMessages = (threadId) => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let apiKey = settings.openAiApiKey
+  const apiKey = userSettings.openAiApiKey;
+
   try {
     let url = `https://api.openai.com/v1/threads/${threadId}/messages`;
     let headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-      "OpenAI-Beta": "assistants=v1"
+      Authorization: `Bearer ${apiKey}`,
+      "OpenAI-Beta": "assistants=v1",
     };
     let options = {
       method: "get",
-      headers: headers
+      headers: headers,
     };
     let response = UrlFetchApp.fetch(url, options);
     let result = JSON.parse(response);
-    let output = result.data[0].content[0].text.value
+    let output = result.data[0].content[0].text.value;
     return output;
   } catch (error) {
-    console.error(`Error in getting messages in thread ID: ${threadId}:`, error);
+    console.error(
+      `Error in getting messages in thread ID: ${threadId}:`,
+      error
+    );
   }
-}
+};
 
 /**
  * Deletes assistant and file
@@ -350,61 +376,72 @@ const getAssistantMessages = (threadId) => {
 const deleteAssistantAndFile = () => {
   // getting user properties:
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  const fileId = settings.fileId
-  const assistantId = settings.assistantId
-  let apiKey = settings.openAiApiKey
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+
+  const fileId = addonSettings.fileId;
+  const assistantId = addonSettings.assistantId;
+  const apiKey = userSettings.openAiApiKey;
 
   // url's to use
-  let fileUrl = `https://api.openai.com/v1/files/${fileId}`
-  let assistantUrl = `https://api.openai.com/v1/assistants/${assistantId}`
+  let fileUrl = `https://api.openai.com/v1/files/${fileId}`;
+  let assistantUrl = `https://api.openai.com/v1/assistants/${assistantId}`;
 
   // headers and options for assistant:
   const assistantHeaders = {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`,
-    "OpenAI-Beta": "assistants=v1"
+    Authorization: `Bearer ${apiKey}`,
+    "OpenAI-Beta": "assistants=v1",
   };
 
   const assistantOptions = {
-    "method": "delete",
-    "headers": assistantHeaders
+    method: "delete",
+    headers: assistantHeaders,
   };
 
   // deleting assistant:
   try {
-    UrlFetchApp.fetch(assistantUrl, assistantOptions)
-    console.log(`Assistant: ${assistantId} was deleted`)
+    UrlFetchApp.fetch(assistantUrl, assistantOptions);
+    console.log(`Assistant: ${assistantId} was deleted`);
   } catch (error) {
     console.error("Error in deleting assistant: ", error);
   }
 
   // headers and options for file:
   const fileHeaders = {
-    "Authorization": `Bearer ${apiKey}`
+    Authorization: `Bearer ${apiKey}`,
   };
 
   const fileOptions = {
-    "method": "delete",
-    "headers": fileHeaders
+    method: "delete",
+    headers: fileHeaders,
   };
 
   // deleting file:
   try {
-    UrlFetchApp.fetch(fileUrl, fileOptions)
-    console.log(`File: ${fileId} was deleted`)
+    UrlFetchApp.fetch(fileUrl, fileOptions);
+    console.log(`File: ${fileId} was deleted`);
   } catch (error) {
     console.error("Error in deleting file: ", error);
   }
 
-  let updatedSettings = {
+  let updatedAddonSettings = {
+    ...addonSettings,
     fileId: "",
     assistantId: "",
-    isAssistantCreated: false
   };
+  saveAddonSettings(updatedAddonSettings);
 
-  saveSettings(updatedSettings);
-  deleteTriggers()
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    isAssistantCreated: false,
+  };
+  saveBooleanSettings(updatedBooleanSettings);
+
+  deleteTriggers();
   refreshCard();
-}
+};

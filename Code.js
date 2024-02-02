@@ -15,10 +15,10 @@ const formatAssistantResponse = (inputString) => {
 
 const sendSummaryAndAssistantCreationEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let fileLink = settings.docsFileLink;
-  let assistantId = settings.assistantId;
+  let fileLink = addonSettings.docsFileLink;
+  let assistantId = addonSettings.assistantId;
 
   const email = Session.getActiveUser().getEmail();
   const subject = `${ADDON_TITLE} - summary created`;
@@ -50,9 +50,9 @@ const sendSummaryAndAssistantCreationEmail = () => {
 
 const sendSummaryUpdateEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let fileLink = settings.docsFileLink;
+  let fileLink = addonSettings.docsFileLink;
 
   const email = Session.getActiveUser().getEmail();
   const subject = `${ADDON_TITLE} - summary updated`;
@@ -82,16 +82,16 @@ const convertDateToTimeStamp = (date) => {
   let timeStamp = Math.floor(parsedDateObject / 1000);
 
   return timeStamp;
-}
+};
 
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let autoReply = settings.autoReply
+  let autoReply = userSettings.autoReply;
 
   if (autoReply === "false") {
-    return
+    return;
   }
 
   const previousCheckDate = settings.checkTimeStamp;
@@ -108,7 +108,7 @@ const replyUnredMessages = () => {
     let lastMessageSender = lastMessage.getFrom();
     let lastMessageDate = lastMessage.getDate();
 
-    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate)
+    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
 
     let formattedMessageSender = formatMessageSender(lastMessageSender);
 
@@ -143,20 +143,22 @@ const replyUnredMessages = () => {
     thread.markRead();
   });
 
-  let newSettings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  let newAddonSettings = JSON.parse(
+    userProperties.getProperty("addonSettings")
+  );
 
-  let updatedSettings = {
-    ...newSettings,
+  let updatedAddonSettings = {
+    ...newAddonSettings,
     checkTimeStamp: lastMessageTimeStamp,
   };
-  saveSettings(updatedSettings);
+  saveAddonSettings(updatedAddonSettings);
 };
 
 const getAllMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  let maxEmails = settings.emailsLimit;
+  let maxEmails = userSettings.emailsLimit;
 
   let allMessages = "";
   let threads = GmailApp.getInboxThreads();
@@ -196,10 +198,10 @@ const getAllMessages = () => {
 
 const compareUpdatedDates = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let docsFileLastUpdatedSettings = settings.lastUpdatedDate;
-  let docsFileId = settings.docsFileId;
+  let docsFileLastUpdatedSettings = addonSettings.lastUpdatedDate;
+  let docsFileId = addonSettings.docsFileId;
 
   if (!docsFileId) {
     // Handle the case where docsFileId is empty
@@ -221,7 +223,11 @@ const compareUpdatedDates = () => {
 
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
   let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
   let docsFileId = docsFile.getId();
@@ -235,14 +241,19 @@ const createInboxSummary = () => {
     new Date(docsFileLastUpdated).getTime() / 1000
   );
 
-  let updatedSettings = {
-    ...settings,
-    isSummaryCreated: true,
+  let updatedAddonSettings = {
+    ...addonSettings,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
-  saveSettings(updatedSettings);
+  saveAddonSettings(updatedAddonSettings);
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    isSummaryCreated: true,
+  };
+  saveAddonSettings(updatedBooleanSettings);
 
   createAssistant();
 
@@ -254,12 +265,10 @@ const createInboxSummary = () => {
 
 const updateInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
 
-  let temporarySettings = { ...settings, summaryUpdatingStatus: "running" };
-  saveSettings(temporarySettings);
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let docsFileId = settings.docsFileId;
+  let docsFileId = addonSettings.docsFileId;
 
   let docsFile = DocumentApp.openById(docsFileId);
   let docBody = docsFile.getBody();
@@ -275,12 +284,12 @@ const updateInboxSummary = () => {
     new Date(docsFileLastUpdated).getTime() / 1000
   );
 
-  let updatedSettings = {
-    ...settings,
+  let updatedAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "finished",
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
-  saveSettings(updatedSettings);
+  saveAddonSettings(updatedAddonSettings);
 
   sendSummaryUpdateEmail();
 };
