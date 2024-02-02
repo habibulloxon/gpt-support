@@ -1,127 +1,99 @@
-const saveSettings = (settings) => {
+const saveBooleanSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
     if (settings) {
-      userProperties.setProperty("settingsAPB", JSON.stringify(settings));
-      console.log(`Settings in ${ADDON_TITLE} were saved successfully.`);
-    } else {
-      console.error("Error: 'settings' is null or undefined.");
-    }
-    let temp = userProperties.getProperty("settingsAPB");
-    let parsedSettings = JSON.parse(temp);
-    console.log("Settings: ", parsedSettings);
-    refreshCard();
-  } catch (error) {
-    console.error("Error saving or retrieving settings:", error);
-  }
-};
-
-const saveSettingsFlags = (settings) => {
-  try {
-    let userProperties = PropertiesService.getUserProperties();
-    if (settings) {
-      userProperties.setProperty("settingsFlags", JSON.stringify(settings));
-      console.log("Settings were successfully saved in settingsFlags");
+      userProperties.setProperty("booleanSettings", JSON.stringify(settings));
+      console.log("Settings were successfully saved in booleanSettings");
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
 
-    let settingsToLog = JSON.parse(userProperties.getProperty("settingsFlags"));
-    console.log("settingsFlags: ", settingsToLog);
+    let settingsToLog = JSON.parse(userProperties.getProperty("booleanSettings"));
+    console.log("booleanSettings: ", settingsToLog);
   } catch {
     console.error(
-      "Error saving or retrieving settings in settingsFlags:",
+      "Error saving or retrieving settings in booleanSettings:",
       error
     );
   }
 };
 
-const saveSettingsUserInfo = (settings) => {
+const saveUserSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
     if (settings) {
-      userProperties.setProperty("settingsUserInfo", JSON.stringify(settings));
-      console.log("Settings were successfully saved in settingsUserInfo");
+      userProperties.setProperty("userSettings", JSON.stringify(settings));
+      console.log("Settings were successfully saved in userSettings");
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
 
     let settingsToLog = JSON.parse(
-      userProperties.getProperty("settingsUserInfo")
+      userProperties.getProperty("userSettings")
     );
-    console.log("settingsUserInfo: ", settingsToLog);
+    console.log("userSettings: ", settingsToLog);
   } catch {
     console.error(
-      "Error saving or retrieving settings in settingsUserInfo:",
+      "Error saving or retrieving settings in userSettings:",
       error
     );
   }
 };
 
-const saveSettingsAddon = (settings) => {
+const saveAddonSettings = (settings) => {
   try {
     let userProperties = PropertiesService.getUserProperties();
     if (settings) {
-      userProperties.setProperty("settingsAddon", JSON.stringify(settings));
-      console.log("Settings were successfully saved in settingsAddon");
+      userProperties.setProperty("addonSettings", JSON.stringify(settings));
+      console.log("Settings were successfully saved in addonSettings");
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
 
-    let settingsToLog = JSON.parse(userProperties.getProperty("settingsAddon"));
-    console.log("settingsAddon: ", settingsToLog);
+    let settingsToLog = JSON.parse(userProperties.getProperty("addonSettings"));
+    console.log("addonSettings: ", settingsToLog);
   } catch {
     console.error(
-      "Error saving or retrieving settings in settingsAddon:",
+      "Error saving or retrieving settings in addonSettings:",
       error
     );
   }
 };
 
+const isPropertyExist = (property) =>
+  property !== null && property !== undefined;
+
 const createSettings = () => {
-  let pastTimestamp = getPastTimeStamp();
+  const pastTimestamp = getPastTimeStamp();
+  const userProperties = PropertiesService.getUserProperties();
 
-  let userProperties = PropertiesService.getUserProperties();
-  let settings = userProperties.getProperty("settingsAPB");
+  const booleanSettings = userProperties.getProperty("booleanSettings");
+  const userSettings = userProperties.getProperty("userSettings");
+  const addonSettings = userProperties.getProperty("addonSettings");
 
-  let isUserPropsExist;
-  if (settings !== null && settings !== undefined) {
-    isUserPropsExist = true;
-  } else {
-    isUserPropsExist = false;
+  const isBooleanSettingsExist = isPropertyExist(booleanSettings);
+  const isUserSettingsExist = isPropertyExist(userSettings);
+  const isAddonSettingsExist = isPropertyExist(addonSettings);
+
+  let newBooleanSettings = {};
+  let newUserSettings = {};
+  let newAddonSettings = {};
+
+  if (!isBooleanSettingsExist) {
+    newBooleanSettings = {};
+
+    saveBooleanSettings(newBooleanSettings);
   }
 
-  let updatedSettings = {};
+  if (!isUserSettingsExist) {
+    newUserSettings = {};
 
-  if (!isUserPropsExist) {
-    updatedSettings = {
-      assistantName: "Zeva",
-      openAiApiKey: "",
-      companyName: "",
-      emailsLimit: 100,
-      autoReply: "true",
-      mainFunctionStatus: "idle",
-      isApiKeyValid: false,
-      updateFunctionStatus: "idle",
-      fileId: "",
-      assistantId: "",
-      docsFileId: "",
-      docsFileLink: "",
-      lastUpdatedDate: "",
-      isFileUpdated: false,
-      isAssistantCreated: false,
-      threadIds: [],
-      checkTimeStamp: pastTimestamp,
-    };
-    saveSettings(updatedSettings);
+    saveUserSettings(newUserSettings);
+  }
 
-    console.log("Settings were created");
-  } else {
-    let docStatus = compareUpdatedDates();
-    updatedSettings = {
-      ...settings,
-      isFileUpdated: docStatus,
-    };
-    saveSettings(updatedSettings);
+  if (!isAddonSettingsExist) {
+    newAddonSettings = {};
+
+    saveAddonSettings(newAddonSettings);
   }
 };
