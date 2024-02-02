@@ -4,32 +4,31 @@ const refreshCard = () => {
 };
 
 const confirmSummaryRegenerateHandler = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let progressSettings = {
-    ...settings,
+  let progressAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "running",
   };
+  saveAddonSettings(progressAddonSettings);
 
-  saveSettings(progressSettings);
-
-  installSummaryUpdateTriggers()
+  installSummaryUpdateTriggers();
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
 
 const denySummaryRegenerateHandler = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let progressSettings = {
-    ...settings,
+  let updatedAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "idle",
   };
 
-  saveSettings(progressSettings);
+  saveAddonSettings(updatedAddonSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -77,8 +76,13 @@ const checkIsApiKeyProper = (apiKey) => {
 };
 
 const handleSaveClick = (e) => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
   let selectedAutoReplyValue = e.commonEventObject.formInputs.radio_field;
 
@@ -97,17 +101,27 @@ const handleSaveClick = (e) => {
     openAiApiKey = "";
   }
 
-  let progressSettings = {
-    ...settings,
+  let updatedAddonSettings = {
+    ...addonSettings,
     mainFunctionStatus: "running",
+  };
+  saveAddonSettings(updatedAddonSettings);
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
     isApiKeyValid: apiKeyStatus,
+  };
+  saveBooleanSettings(updatedBooleanSettings);
+
+  let updatedUserSettings = {
+    ...userSettings,
     companyName: companyName,
     assistantName: assistantName,
     emailsLimit: emailsLimit,
     openAiApiKey: openAiApiKey,
     autoReply: autoReply,
   };
-  saveSettings(progressSettings);
+  saveUserSettings(updatedUserSettings);
 
   if (apiKeyStatus) {
     installSummaryCreationTriggers();
@@ -118,14 +132,16 @@ const handleSaveClick = (e) => {
 };
 
 const updateAssistantInstructions = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-// const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
 
-  const OPENAI_API_KEY = settings.openAiApiKey;
-  const assistantId = settings.assistantId;
-  const companyName = settings.companyName;
-  const name = settings.assistantName;
-  const fileId = settings.fileId;
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  const OPENAI_API_KEY = userSettings.openAiApiKey;
+  const assistantId = addonSettings.assistantId;
+  const companyName = userSettings.companyName;
+  const name = userSettings.assistantName;
+  const fileId = addonSettings.fileId;
 
   let url = `https://api.openai.com/v1/assistants/${assistantId}`;
 
@@ -154,8 +170,12 @@ const updateAssistantInstructions = () => {
 };
 
 const handleSettingsUpdateClick = (e) => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
   const {
     companyName: prevCompanyName,
@@ -163,7 +183,7 @@ const handleSettingsUpdateClick = (e) => {
     openAiApiKey: prevApiKey,
     emailsLimit: prevEmailsLimit,
     autoReply: prevAutoReply,
-  } = settings;
+  } = userSettings;
 
   const currentSelectedAutoReplyValue =
     e.commonEventObject.formInputs.radio_field.stringInputs.value[0];
@@ -186,11 +206,11 @@ const handleSettingsUpdateClick = (e) => {
     } else {
       apiKey = "";
       const updatedSettings = {
-        ...settings,
+        ...booleanSettings,
         isApiKeyValid: false,
       };
 
-      saveSettings(updatedSettings);
+      saveBooleanSettings(updatedSettings);
     }
   }
 
@@ -202,8 +222,8 @@ const handleSettingsUpdateClick = (e) => {
     prevAutoReply !== currentAutoReply;
 
   if (settingsChanged) {
-    const updatedSettings = {
-      ...settings,
+    const updatedUserSettings = {
+      ...userSettings,
       companyName: currentCompanyName,
       assistantName: currentAssistantName,
       openAiApiKey: apiKey,
@@ -211,7 +231,7 @@ const handleSettingsUpdateClick = (e) => {
       autoReply: currentAutoReply,
     };
 
-    saveSettings(updatedSettings);
+    saveUserSettings(updatedUserSettings);
   } else {
     Logger.log("There is nothing to change");
   }
@@ -231,15 +251,22 @@ const handleSettingsUpdateClick = (e) => {
 };
 
 const reEnterApiKeyHandler = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
 
-  let updatedSettings = {
-    ...settings,
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  let updatedAddonSettings = {
+    ...addonSettings,
     mainFunctionStatus: "idle",
+  };
+  saveAddonSettings(updatedAddonSettings);
+
+  let updatedUserSettings = {
+    ...userSettings,
     openAiApiKey: "",
   };
-  saveSettings(updatedSettings);
+  saveUserSettings(updatedUserSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -284,64 +311,76 @@ const updateAssistantFile = (apiKey, fileId, assistantId) => {
 };
 
 const confirmAssistantUpdateHandler = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
 
-  let progressSettings = {
-    ...settings,
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+
+  let progressAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "running",
   };
 
-  saveSettings(progressSettings);
+  saveAddonSettings(progressAddonSettings);
 
-  const assistantId = settings.assistantId;
-  const apiKey = settings.openAiApiKey;
+  const assistantId = addonSettings.assistantId;
+  const apiKey = userSettings.openAiApiKey;
+  const oldFileId = addonSettings.fileId;
 
-  const oldFileId = settings.fileId;
   deleteFile(assistantId, oldFileId, apiKey);
 
   const newFileId = getUploadedFileId();
 
   updateAssistantFile(apiKey, newFileId, assistantId);
 
-  let updatedSettings = {
-    ...settings,
+  let updatedAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "finished",
     fileId: newFileId,
+  };
+  saveAddonSettings(updatedAddonSettings);
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
     isFileUpdated: false,
   };
+  saveBooleanSettings(updatedBooleanSettings);
 
-  saveSettings(updatedSettings);
   sendSummaryUpdateEmail();
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
 
 const denyAssistantUpdateHandler = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
-  let updatedSettings = {
-    ...settings,
+  let updatedBooleanSettings = {
+    ...booleanSettings,
     isFileUpdated: false,
   };
 
-  saveSettings(updatedSettings);
+  saveBooleanSettings(updatedBooleanSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
 
 const regenerateInboxSummaryHandle = () => {
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let progressSettings = {
-    ...settings,
+  let progressAddonSettings = {
+    ...addonSettings,
     updateFunctionStatus: "pending",
   };
 
-  saveSettings(progressSettings);
+  saveSettings(progressAddonSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -356,22 +395,27 @@ const runAddon = () => {
   const cardSection = CardService.newCardSection();
 
   // user properties === settings
-//  const userProperties = PropertiesService.getUserProperties();
-//  const settings = JSON.parse(userProperties.getProperty("settingsAPB"));
+  const userProperties = PropertiesService.getUserProperties();
+
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
   // conditions
-  const mainFunctionStatus = settings.mainFunctionStatus;
-  const updateFunctionStatus = settings.updateFunctionStatus;
+  const mainFunctionStatus = addonSettings.mainFunctionStatus;
+  const updateFunctionStatus = addonSettings.updateFunctionStatus;
 
   // user settings from properties
-  const companyName = settings.companyName;
-  const assistantName = settings.assistantName;
-  const apiKey = settings.openAiApiKey;
-  const emailsLimit = settings.emailsLimit;
-  const autoReply = settings.autoReply;
-  const fileLink = settings.docsFileLink;
-  const isApiKeyValid = settings.isApiKeyValid;
-  const isFileUpdated = settings.isFileUpdated
+  const companyName = userSettings.companyName;
+  const assistantName = userSettings.assistantName;
+  const apiKey = userSettings.openAiApiKey;
+  const emailsLimit = userSettings.emailsLimit;
+  const autoReply = userSettings.autoReply;
+  const fileLink = addonSettings.docsFileLink;
+  const isApiKeyValid = booleanSettings.isApiKeyValid;
+  const isFileUpdated = booleanSettings.isFileUpdated;
 
   // actions === functions
   const saveSettingsAction =
