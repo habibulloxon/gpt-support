@@ -7,9 +7,6 @@ const saveBooleanSettings = (settings) => {
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
-
-    let settingsToLog = JSON.parse(userProperties.getProperty("booleanSettings"));
-    console.log("booleanSettings: ", settingsToLog);
   } catch {
     console.error(
       "Error saving or retrieving settings in booleanSettings:",
@@ -27,11 +24,6 @@ const saveUserSettings = (settings) => {
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
-
-    let settingsToLog = JSON.parse(
-      userProperties.getProperty("userSettings")
-    );
-    console.log("userSettings: ", settingsToLog);
   } catch {
     console.error(
       "Error saving or retrieving settings in userSettings:",
@@ -49,9 +41,6 @@ const saveAddonSettings = (settings) => {
     } else {
       console.error("Error: 'settings' is null or undefined.");
     }
-
-    let settingsToLog = JSON.parse(userProperties.getProperty("addonSettings"));
-    console.log("addonSettings: ", settingsToLog);
   } catch {
     console.error(
       "Error saving or retrieving settings in addonSettings:",

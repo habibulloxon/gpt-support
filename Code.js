@@ -221,6 +221,12 @@ const compareUpdatedDates = () => {
   }
 };
 
+const testParagraph = () => {
+  let lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean erat lorem, laoreet iaculis lorem ut, pharetra placerat tortor. Phasellus consectetur, lectus non ultricies tincidunt, metus velit convallis sem, sed tincidunt sapien massa eu nulla. Sed sed posuere dui. Vestibulum suscipit, arcu in scelerisque ornare, orci metus pellentesque enim, eget volutpat elit quam eget tortor. In eleifend ipsum vestibulum arcu congue posuere. Mauris mattis mauris nisi, eget aliquet velit mattis et. Praesent posuere odio at fermentum tincidunt. Nam urna augue, consectetur ac egestas non, dignissim quis turpis."
+
+  return lorem;
+}
+
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
 
@@ -232,10 +238,13 @@ const createInboxSummary = () => {
   let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
   let docsFileId = docsFile.getId();
   let docsFileLink = DocumentApp.openById(docsFileId).getUrl();
-  let inboxEmails = getAllMessages();
-  let summarizedEmails = summarization(inboxEmails);
 
-  docsFile.getBody().insertParagraph(0, summarizedEmails);
+  // let inboxEmails = getAllMessages();
+  // let summarizedEmails = summarization(inboxEmails);
+
+  let placeholderText = testParagraph()
+
+  docsFile.getBody().insertParagraph(0, placeholderText);
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
   let docsFileLastUpdatedTimeStamp = Math.floor(
     new Date(docsFileLastUpdated).getTime() / 1000

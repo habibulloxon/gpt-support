@@ -476,7 +476,7 @@ const runAddon = () => {
       .setText("No")
       .setOnClickAction(denySummaryRegenerateAction);
     cardSection.addWidget(denyButton);
-  } else if (!isApiKeyValid) {
+  } else if (!isApiKeyValid && apiKey !== "") {
     const errorText = CardService.newTextParagraph().setText(
       "Entered API key is not meeting requirements, please re-enter your API key"
     );
@@ -492,7 +492,7 @@ const runAddon = () => {
     );
     cardSection.addWidget(loadingText);
   } else {
-    const docFile = settings.docsFileLink;
+    const docFile = addonSettings.docsFileLink;
     if (docFile === "") {
       const companyNameInput = CardService.newTextInput()
         .setFieldName("company_name_input")
