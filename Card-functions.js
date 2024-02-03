@@ -78,9 +78,7 @@ const checkIsApiKeyProper = (apiKey) => {
 const handleSaveClick = (e) => {
   const userProperties = PropertiesService.getUserProperties();
 
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
-  );
+  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
@@ -93,23 +91,30 @@ const handleSaveClick = (e) => {
   let autoReply = selectedAutoReplyValue.stringInputs.value[0];
 
   let apiKeyStatus = checkIsApiKeyProper(apiKey);
+
+  let keyStatus;
   let openAiApiKey;
+  let mainFuncStatus;
 
   if (apiKeyStatus) {
     openAiApiKey = apiKey;
+    mainFuncStatus = "running";
+    keyStatus = true;
   } else {
     openAiApiKey = "";
+    mainFuncStatus = "error";
+    keyStatus = false;
   }
 
   let updatedAddonSettings = {
     ...addonSettings,
-    mainFunctionStatus: "running",
+    mainFunctionStatus: mainFuncStatus,
   };
   saveAddonSettings(updatedAddonSettings);
 
   let updatedBooleanSettings = {
     ...booleanSettings,
-    isApiKeyValid: apiKeyStatus,
+    isApiKeyValid: keyStatus,
   };
   saveBooleanSettings(updatedBooleanSettings);
 
@@ -123,11 +128,15 @@ const handleSaveClick = (e) => {
   };
   saveUserSettings(updatedUserSettings);
 
+  Utilities.sleep(2500)
+
   if (apiKeyStatus) {
     installSummaryCreationTriggers();
+  } else {
+    console.log("Can not add trigger")
   }
 
-  const card = runAddon();
+  let card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
 
@@ -255,12 +264,19 @@ const reEnterApiKeyHandler = () => {
 
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
 
   let updatedAddonSettings = {
     ...addonSettings,
     mainFunctionStatus: "idle",
   };
   saveAddonSettings(updatedAddonSettings);
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    isApiKeyValid: null
+  }
+  saveBooleanSettings(updatedBooleanSettings)
 
   let updatedUserSettings = {
     ...userSettings,
@@ -312,63 +328,52 @@ const updateAssistantFile = (apiKey, fileId, assistantId) => {
 
 const confirmAssistantUpdateHandler = () => {
   const userProperties = PropertiesService.getUserProperties();
-
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const booleanSettings = JSON.parse(
     userProperties.getProperty("booleanSettings")
   );
 
-  let progressAddonSettings = {
-    ...addonSettings,
-    updateFunctionStatus: "running",
-  };
+  let isFileUpdatedStatus = compareUpdatedDates()
+  let isFileUpdated = booleanSettings.isFileUpdated
 
-  saveAddonSettings(progressAddonSettings);
+  if (isFileUpdatedStatus || isFileUpdated) {
+    let progressAddonSettings = {
+      ...addonSettings,
+      updateFunctionStatus: "running",
+    };
 
-  const assistantId = addonSettings.assistantId;
-  const apiKey = userSettings.openAiApiKey;
-  const oldFileId = addonSettings.fileId;
+    saveAddonSettings(progressAddonSettings);
 
-  deleteFile(assistantId, oldFileId, apiKey);
+    const assistantId = addonSettings.assistantId;
+    const apiKey = userSettings.openAiApiKey;
+    const oldFileId = addonSettings.fileId;
 
-  const newFileId = getUploadedFileId();
+    deleteFile(assistantId, oldFileId, apiKey);
 
-  updateAssistantFile(apiKey, newFileId, assistantId);
+    const newFileId = getUploadedFileId();
 
-  let updatedAddonSettings = {
-    ...addonSettings,
-    updateFunctionStatus: "finished",
-    fileId: newFileId,
-  };
-  saveAddonSettings(updatedAddonSettings);
+    updateAssistantFile(apiKey, newFileId, assistantId);
 
-  let updatedBooleanSettings = {
-    ...booleanSettings,
-    isFileUpdated: false,
-  };
-  saveBooleanSettings(updatedBooleanSettings);
+    let updatedAddonSettings = {
+      ...addonSettings,
+      updateFunctionStatus: "finished",
+      fileId: newFileId,
+    };
+    saveAddonSettings(updatedAddonSettings);
 
-  sendSummaryUpdateEmail();
-  const card = runAddon();
-  return CardService.newNavigation().updateCard(card);
-};
+    let updatedBooleanSettings = {
+      ...booleanSettings,
+      isFileUpdated: false,
+    };
+    saveBooleanSettings(updatedBooleanSettings);
 
-const denyAssistantUpdateHandler = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
-  );
-
-  let updatedBooleanSettings = {
-    ...booleanSettings,
-    isFileUpdated: false,
-  };
-
-  saveBooleanSettings(updatedBooleanSettings);
-
-  const card = runAddon();
-  return CardService.newNavigation().updateCard(card);
+    sendSummaryUpdateEmail();
+    const card = runAddon();
+    return CardService.newNavigation().updateCard(card);
+  } else {
+    console.log("There is nothing to change")
+  }
 };
 
 const regenerateInboxSummaryHandle = () => {
@@ -380,7 +385,7 @@ const regenerateInboxSummaryHandle = () => {
     updateFunctionStatus: "pending",
   };
 
-  saveSettings(progressAddonSettings);
+  saveAddonSettings(progressAddonSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -429,9 +434,6 @@ const runAddon = () => {
   const reEnterApiKeyAction = CardService.newAction().setFunctionName(
     "reEnterApiKeyHandler"
   );
-  const denyUpdateAssistantFileAction = CardService.newAction().setFunctionName(
-    "denyAssistantUpdateHandler"
-  );
   const confirmUpdateAssistantFileAction =
     CardService.newAction().setFunctionName("confirmAssistantUpdateHandler");
   const confirmSummaryRegenerateAction =
@@ -446,21 +448,6 @@ const runAddon = () => {
       "Your settings are saving"
     );
     cardSection.addWidget(loadingText);
-  } else if (isFileUpdated) {
-    const notificationText = CardService.newTextParagraph().setText(
-      "You have changed your summary file do you want to update assistant file?"
-    );
-    cardSection.addWidget(notificationText);
-
-    const updateAssistantButtonConfirm = CardService.newTextButton()
-      .setText("Yes, update assistant")
-      .setOnClickAction(confirmUpdateAssistantFileAction);
-    cardSection.addWidget(updateAssistantButtonConfirm);
-
-    const updateAssistantButtonDeny = CardService.newTextButton()
-      .setText("No, do not update assistant")
-      .setOnClickAction(denyUpdateAssistantFileAction);
-    cardSection.addWidget(updateAssistantButtonDeny);
   } else if (updateFunctionStatus === "pending") {
     const notificationText = CardService.newTextParagraph().setText(
       "Do you want to regenerate new summary and override current one?"
@@ -476,7 +463,7 @@ const runAddon = () => {
       .setText("No")
       .setOnClickAction(denySummaryRegenerateAction);
     cardSection.addWidget(denyButton);
-  } else if (!isApiKeyValid && apiKey !== "") {
+  } else if (isApiKeyValid === false) {
     const errorText = CardService.newTextParagraph().setText(
       "Entered API key is not meeting requirements, please re-enter your API key"
     );
@@ -551,6 +538,13 @@ const runAddon = () => {
         .setText("Regenerate summary file")
         .setOnClickAction(regenerateInboxSummaryAction);
       cardSection.addWidget(regenerateSummaryFileBtn);
+
+      cardSection.addWidget(divider);
+
+      const updateAssistantButtonConfirm = CardService.newTextButton()
+        .setText("Update assistant file")
+        .setOnClickAction(confirmUpdateAssistantFileAction);
+      cardSection.addWidget(updateAssistantButtonConfirm);
 
       cardSection.addWidget(divider);
 

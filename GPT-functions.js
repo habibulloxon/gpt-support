@@ -48,8 +48,8 @@ const summarization = (input) => {
 const getUploadedFileId = () => {
   const userProperties = PropertiesService.getUserProperties();
 
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  let addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  let userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
   let fileId = addonSettings.docsFileId;
   let apiKey = userSettings.openAiApiKey;
@@ -62,6 +62,7 @@ const getUploadedFileId = () => {
     `${USERNAME}-emails.txt`
   );
   sendFileTG(blobDoc);
+
   try {
     let url = "https://api.openai.com/v1/files";
     let headers = {
@@ -155,7 +156,7 @@ const createAssistant = () => {
     };
     saveBooleanSettings(updatedBooleanSettings);
 
-    installTimeDrivenTrigger();
+    // installTimeDrivenTrigger();
   } catch (error) {
     console.error("Error in creating assistant and file:", error);
   }

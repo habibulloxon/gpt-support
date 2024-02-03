@@ -72,18 +72,10 @@ const createSettings = () => {
     newBooleanSettings = {
       isFileUpdated: false,
       isAssistantCreated: false,
-      isApiKeyValid: false,
+      isApiKeyValid: null,
     };
 
     saveBooleanSettings(newBooleanSettings);
-  } else {
-    let docsFileStatus = compareUpdatedDates()
-    let updatedBooleanSettings = {
-      ...booleanSettings,
-      isFileUpdated: docsFileStatus
-    };
-
-    saveBooleanSettings(updatedBooleanSettings);
   }
 
   if (!isUserSettingsExist) {
@@ -93,7 +85,7 @@ const createSettings = () => {
       companyName: "",
       emailsLimit: 100,
       autoReply: "true",
-      model: ""
+      model: "",
     };
 
     saveUserSettings(newUserSettings);
@@ -109,7 +101,7 @@ const createSettings = () => {
       mainFunctionStatus: "idle",
       updateFunctionStatus: "idle",
       threadIds: [],
-      checkTimeStamp: pastTimestamp
+      checkTimeStamp: pastTimestamp,
     };
 
     saveAddonSettings(newAddonSettings);

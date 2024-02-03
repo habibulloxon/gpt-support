@@ -1,20 +1,23 @@
 const installTimeDrivenTrigger = () => {
-  const triggers = ScriptApp.getProjectTriggers();
-  let timeDrivenTriggerExists = false;
-  for (let i = 0; i < triggers.length; i++) {
-    if (triggers[i].getEventType() === ScriptApp.EventType.CLOCK) {
-      timeDrivenTriggerExists = true;
-      break;
+  try {
+    const triggers = ScriptApp.getProjectTriggers();
+    let timeDrivenTriggerExists = false;
+    for (let i = 0; i < triggers.length; i++) {
+      if (triggers[i].getEventType() === ScriptApp.EventType.CLOCK) {
+        timeDrivenTriggerExists = true;
+        break;
+      }
     }
+    if (!timeDrivenTriggerExists) {
+      ScriptApp.newTrigger("replyUnredMessages")
+        .timeBased()
+        .everyHours(1)
+        .create();
+    }
+    console.log("replyUnredMessages was installed as a trigger")
+  } catch (error) {
+    console.error("Error in installing replyUnreadMessages trigger:", error.name);
   }
-  if (!timeDrivenTriggerExists) {
-    ScriptApp.newTrigger("replyUnredMessages")
-      .timeBased()
-      .everyHours(1)
-      .create();
-  }
-
-  return timeDrivenTriggerExists
 };
 
 const installSummaryCreationTriggers = () => {

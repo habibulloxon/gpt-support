@@ -90,68 +90,66 @@ const replyUnredMessages = () => {
 
   let autoReply = userSettings.autoReply;
 
-  if (autoReply === "false") {
-    return;
-  }
+  if (autoReply === "true") {
+    const previousCheckDate = settings.checkTimeStamp;
 
-  const previousCheckDate = settings.checkTimeStamp;
+    const searchQuery = `is:unread after:${previousCheckDate}`;
+    const searchedThreads = GmailApp.search(searchQuery);
 
-  const searchQuery = `is:unread after:${previousCheckDate}`;
-  const searchedThreads = GmailApp.search(searchQuery);
+    let lastMessageTimeStamp;
 
-  let lastMessageTimeStamp;
+    searchedThreads.forEach((thread) => {
+      let messages = thread.getMessages();
+      let messageCount = thread.getMessageCount();
+      let lastMessage = messages[messageCount - 1];
+      let lastMessageSender = lastMessage.getFrom();
+      let lastMessageDate = lastMessage.getDate();
 
-  searchedThreads.forEach((thread) => {
-    let messages = thread.getMessages();
-    let messageCount = thread.getMessageCount();
-    let lastMessage = messages[messageCount - 1];
-    let lastMessageSender = lastMessage.getFrom();
-    let lastMessageDate = lastMessage.getDate();
+      lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
 
-    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
+      let formattedMessageSender = formatMessageSender(lastMessageSender);
 
-    let formattedMessageSender = formatMessageSender(lastMessageSender);
+      let threadId = thread.getId();
+      let message = lastMessage.getPlainBody();
+      let formattedMessage = message
+        .split("wrote:")[0]
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .join("\n");
 
-    let threadId = thread.getId();
-    let message = lastMessage.getPlainBody();
-    let formattedMessage = message
-      .split("wrote:")[0]
-      .split("\n")
-      .filter((line) => line.trim() !== "")
-      .join("\n");
+      let assistantResponse = null;
 
-    let assistantResponse = null;
+      let assistantThreadId = getAssistantThreadId(threadId);
+      addMessageToAssistantThread(assistantThreadId, formattedMessage);
+      let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
 
-    let assistantThreadId = getAssistantThreadId(threadId);
-    addMessageToAssistantThread(assistantThreadId, formattedMessage);
-    let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
-
-    let runStatus;
-    while (
-      (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
-    ) {
-      if (runStatus === "queued") {
-        Utilities.sleep(5000);
+      let runStatus;
+      while (
+        (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
+      ) {
+        if (runStatus === "queued") {
+          Utilities.sleep(5000);
+        }
       }
-    }
 
-    assistantResponse = getAssistantMessages(assistantThreadId);
+      assistantResponse = getAssistantMessages(assistantThreadId);
 
-    let formattedAssistantResponse = formatAssistantResponse(assistantResponse);
+      let formattedAssistantResponse = formatAssistantResponse(assistantResponse);
 
-    lastMessage.reply(formattedAssistantResponse);
-    thread.markRead();
-  });
+      lastMessage.reply(formattedAssistantResponse);
+      thread.markRead();
+    });
 
-  let newAddonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
+    let newAddonSettings = JSON.parse(
+      userProperties.getProperty("addonSettings")
+    );
 
-  let updatedAddonSettings = {
-    ...newAddonSettings,
-    checkTimeStamp: lastMessageTimeStamp,
-  };
-  saveAddonSettings(updatedAddonSettings);
+    let updatedAddonSettings = {
+      ...newAddonSettings,
+      checkTimeStamp: lastMessageTimeStamp,
+    };
+    saveAddonSettings(updatedAddonSettings);
+  }
 };
 
 const getAllMessages = () => {
@@ -203,29 +201,37 @@ const compareUpdatedDates = () => {
   let docsFileLastUpdatedSettings = addonSettings.lastUpdatedDate;
   let docsFileId = addonSettings.docsFileId;
 
-  if (!docsFileId) {
-    // Handle the case where docsFileId is empty
-    console.error("Error: docsFileId is empty.");
-    return false; // or handle it based on your use case
-  }
+  if (docsFileId) {
+    let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+    let docsFileLastUpdatedTimeStamp = Math.floor(
+      new Date(docsFileLastUpdated).getTime() / 1000
+    );
 
-  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(
-    new Date(docsFileLastUpdated).getTime() / 1000
-  );
+    console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
+    console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
 
-  if (parseInt(docsFileLastUpdatedSettings) != docsFileLastUpdatedTimeStamp) {
-    return true;
-  } else {
-    return false;
+    let difference = parseInt(docsFileLastUpdatedSettings) - docsFileLastUpdatedTimeStamp;
+    console.log(difference)
+
+    if (parseInt(docsFileLastUpdatedSettings) != docsFileLastUpdatedTimeStamp) {
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 
+function test() {
+  let status = compareUpdatedDates()
+  console.log(status)
+}
+
 const testParagraph = () => {
-  let lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean erat lorem, laoreet iaculis lorem ut, pharetra placerat tortor. Phasellus consectetur, lectus non ultricies tincidunt, metus velit convallis sem, sed tincidunt sapien massa eu nulla. Sed sed posuere dui. Vestibulum suscipit, arcu in scelerisque ornare, orci metus pellentesque enim, eget volutpat elit quam eget tortor. In eleifend ipsum vestibulum arcu congue posuere. Mauris mattis mauris nisi, eget aliquet velit mattis et. Praesent posuere odio at fermentum tincidunt. Nam urna augue, consectetur ac egestas non, dignissim quis turpis."
+  let lorem =
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean erat lorem, laoreet iaculis lorem ut, pharetra placerat tortor. Phasellus consectetur, lectus non ultricies tincidunt, metus velit convallis sem, sed tincidunt sapien massa eu nulla. Sed sed posuere dui. Vestibulum suscipit, arcu in scelerisque ornare, orci metus pellentesque enim, eget volutpat elit quam eget tortor. In eleifend ipsum vestibulum arcu congue posuere. Mauris mattis mauris nisi, eget aliquet velit mattis et. Praesent posuere odio at fermentum tincidunt. Nam urna augue, consectetur ac egestas non, dignissim quis turpis.";
 
   return lorem;
-}
+};
 
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
@@ -242,7 +248,7 @@ const createInboxSummary = () => {
   // let inboxEmails = getAllMessages();
   // let summarizedEmails = summarization(inboxEmails);
 
-  let placeholderText = testParagraph()
+  let placeholderText = testParagraph();
 
   docsFile.getBody().insertParagraph(0, placeholderText);
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
@@ -262,11 +268,15 @@ const createInboxSummary = () => {
     ...booleanSettings,
     isSummaryCreated: true,
   };
-  saveAddonSettings(updatedBooleanSettings);
+  saveBooleanSettings(updatedBooleanSettings);
+
+  Utilities.sleep(2000);
 
   createAssistant();
 
   sendSummaryAndAssistantCreationEmail();
+
+  installTimeDrivenTrigger()
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -276,6 +286,7 @@ const updateInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
 
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
 
   let docsFileId = addonSettings.docsFileId;
 
@@ -299,6 +310,12 @@ const updateInboxSummary = () => {
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
   saveAddonSettings(updatedAddonSettings);
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    isFileUpdated: true
+  }
+  saveBooleanSettings(updatedBooleanSettings)
 
   sendSummaryUpdateEmail();
 };
