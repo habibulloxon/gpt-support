@@ -35,6 +35,13 @@ const installSummaryUpdateTriggers = () => {
     .create();
 };
 
+const installResponseCreateTrigger = () => {
+  ScriptApp.newTrigger("generateReply")
+    .timeBased()
+    .at(new Date((getCurrentTimeStamp() + 1) * 1000))
+    .create();
+}
+
 const deleteTriggers = () => {
   const allTriggers = ScriptApp.getProjectTriggers();
   allTriggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));

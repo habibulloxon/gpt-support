@@ -99,6 +99,8 @@ const createSettings = () => {
       lastUpdatedDate: "",
       mainFunctionStatus: "idle",
       updateFunctionStatus: "idle",
+      responseCreationStatus: "idle",
+      messageId: "",
       threadIds: [],
       checkTimeStamp: pastTimestamp,
     };

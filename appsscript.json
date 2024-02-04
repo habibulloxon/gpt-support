@@ -11,6 +11,19 @@
     "gmail": {
       "homepageTrigger": {
         "runFunction": "runAddon"
+      },
+      "contextualTriggers": [
+        {
+          "unconditional": {},
+          "onTriggerFunction": "onGmailMessageOpen"
+        }
+      ],
+      "composeTrigger": {
+        "selectActions": [
+          {
+            "runFunction":  "onGmailMessageOpen"
+          }
+        ]
       }
     }
   }
