@@ -194,7 +194,7 @@ const getAllMessages = () => {
   return allMessages;
 };
 
-const compareUpdatedDates = () => {
+const isSummaryFileUpdated = () => {
   const userProperties = PropertiesService.getUserProperties();
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
@@ -210,11 +210,15 @@ const compareUpdatedDates = () => {
     console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
     console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
 
-    let difference = parseInt(docsFileLastUpdatedSettings) - docsFileLastUpdatedTimeStamp;
+    let difference =  docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
     console.log(difference)
 
-    if (parseInt(docsFileLastUpdatedSettings) != docsFileLastUpdatedTimeStamp) {
-      return true;
+    if (parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp) {
+      if (difference < 10) {
+        return false;
+      } else {
+        return true
+      }
     } else {
       return false;
     }
@@ -222,7 +226,7 @@ const compareUpdatedDates = () => {
 };
 
 function test() {
-  let status = compareUpdatedDates()
+  let status = isSummaryFileUpdated()
   console.log(status)
 }
 
@@ -273,6 +277,12 @@ const createInboxSummary = () => {
   Utilities.sleep(2000);
 
   createAssistant();
+
+  Utilities.sleep(1000);
+
+  deleteTriggers()
+
+  Utilities.sleep(2000);
 
   sendSummaryAndAssistantCreationEmail();
 

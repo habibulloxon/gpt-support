@@ -334,7 +334,7 @@ const confirmAssistantUpdateHandler = () => {
     userProperties.getProperty("booleanSettings")
   );
 
-  let isFileUpdatedStatus = compareUpdatedDates()
+  let isFileUpdatedStatus = isSummaryFileUpdated()
   let isFileUpdated = booleanSettings.isFileUpdated
 
   if (isFileUpdatedStatus || isFileUpdated) {
