@@ -78,7 +78,9 @@ const checkIsApiKeyProper = (apiKey) => {
 const handleSaveClick = (e) => {
   const userProperties = PropertiesService.getUserProperties();
 
-  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
@@ -128,12 +130,12 @@ const handleSaveClick = (e) => {
   };
   saveUserSettings(updatedUserSettings);
 
-  Utilities.sleep(2500)
+  Utilities.sleep(2500);
 
   if (apiKeyStatus) {
     installSummaryCreationTriggers();
   } else {
-    console.log("Can not add trigger")
+    console.log("Can not add trigger");
   }
 
   let card = runAddon();
@@ -146,7 +148,7 @@ const updateAssistantInstructions = () => {
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  const OPENAI_API_KEY = userSettings.openAiApiKey;
+  const apiKey = userSettings.openAiApiKey;
   const assistantId = addonSettings.assistantId;
   const companyName = userSettings.companyName;
   const name = userSettings.assistantName;
@@ -156,7 +158,7 @@ const updateAssistantInstructions = () => {
 
   let headers = {
     "Content-Type": "application/json",
-    Authorization: "Bearer " + OPENAI_API_KEY,
+    Authorization: `Bearer ${apiKey}`,
     "OpenAI-Beta": "assistants=v1",
   };
 
@@ -186,27 +188,59 @@ const handleSettingsUpdateClick = (e) => {
     userProperties.getProperty("booleanSettings")
   );
 
-  const {
-    companyName: prevCompanyName,
-    assistantName: prevAssistantName,
-    openAiApiKey: prevApiKey,
-    emailsLimit: prevEmailsLimit,
-    autoReply: prevAutoReply,
-  } = userSettings;
+  let prevCompanyName = userSettings.companyName;
+  let prevAssistantName = userSettings.assistantName;
+  let prevApiKey = userSettings.openAiApiKey;
+  let prevEmailsLimit = userSettings.emailsLimit;
+  let prevAutoReply = userSettings.autoReply;
 
-  const currentSelectedAutoReplyValue =
+  let currentSelectedAutoReplyValue =
     e.commonEventObject.formInputs.radio_field.stringInputs.value[0];
 
-  const {
-    company_name_input: currentCompanyName,
-    assistant_name_input: currentAssistantName,
-    api_key_input: currentApiKey,
-    emails_limit_input: currentEmailsLimit,
-  } = e.formInput;
+  let currentCompanyName;
+  let currentAssistantName;
+  let currentApiKey;
+  let currentEmailsLimit;
+  let currentAutoReply;
 
-  const currentAutoReply = currentSelectedAutoReplyValue;
+  if (e.formInput.company_name_input === undefined) {
+    currentCompanyName = prevCompanyName;
+  } else {
+    currentCompanyName = e.formInput.company_name_input;
+  }
 
-  let apiKey;
+  if (e.formInput.assistant_name_input === undefined) {
+    currentAssistantName = prevAssistantName;
+  } else {
+    currentAssistantName = e.formInput.assistant_name_input;
+  }
+
+  if (e.formInput.api_key_input === undefined) {
+    currentApiKey = prevApiKey;
+  } else {
+    currentApiKey = e.formInput.api_key_input;
+  }
+
+  if (e.formInput.emails_limit_input === undefined) {
+    currentEmailsLimit = prevEmailsLimit;
+  } else {
+    currentEmailsLimit = e.formInput.emails_limit_input;
+  }
+
+  if (currentSelectedAutoReplyValue === undefined) {
+    currentAutoReply = prevAutoReply;
+  } else {
+    currentAutoReply = currentSelectedAutoReplyValue;
+  }
+
+  let apiKey = prevApiKey; 
+
+  const settingsChanged =
+    prevCompanyName !== currentCompanyName ||
+    prevAssistantName !== currentAssistantName ||
+    prevApiKey !== currentApiKey ||
+    prevEmailsLimit !== currentEmailsLimit ||
+    prevAutoReply !== currentAutoReply;
 
   if (prevApiKey !== currentApiKey) {
     let apiKeyStatus = checkIsApiKeyProper(currentApiKey);
@@ -223,15 +257,8 @@ const handleSettingsUpdateClick = (e) => {
     }
   }
 
-  const settingsChanged =
-    prevCompanyName !== currentCompanyName ||
-    prevAssistantName !== currentAssistantName ||
-    prevApiKey !== currentApiKey ||
-    prevEmailsLimit !== currentEmailsLimit ||
-    prevAutoReply !== currentAutoReply;
-
   if (settingsChanged) {
-    const updatedUserSettings = {
+    let updatedUserSettings = {
       ...userSettings,
       companyName: currentCompanyName,
       assistantName: currentAssistantName,
@@ -264,7 +291,9 @@ const reEnterApiKeyHandler = () => {
 
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
   let updatedAddonSettings = {
     ...addonSettings,
@@ -274,9 +303,9 @@ const reEnterApiKeyHandler = () => {
 
   let updatedBooleanSettings = {
     ...booleanSettings,
-    isApiKeyValid: null
-  }
-  saveBooleanSettings(updatedBooleanSettings)
+    isApiKeyValid: null,
+  };
+  saveBooleanSettings(updatedBooleanSettings);
 
   let updatedUserSettings = {
     ...userSettings,
@@ -288,8 +317,24 @@ const reEnterApiKeyHandler = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
-const deleteFile = (assistantId, fileId, apiKey) => {
+const deleteAssistantFile = (assistantId, fileId, apiKey) => {
   var url = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`;
+  var headers = {
+    Authorization: "Bearer " + apiKey,
+    "Content-Type": "application/json",
+    "OpenAI-Beta": "assistants=v1",
+  };
+
+  var options = {
+    method: "DELETE",
+    headers: headers,
+  };
+
+  UrlFetchApp.fetch(url, options);
+};
+
+const deleteFile = (fileId, apiKey) => {
+  var url = `https://api.openai.com/v1/files/${fileId}`;
   var headers = {
     Authorization: "Bearer " + apiKey,
     "Content-Type": "application/json",
@@ -334,8 +379,8 @@ const confirmAssistantUpdateHandler = () => {
     userProperties.getProperty("booleanSettings")
   );
 
-  let isFileUpdatedStatus = isSummaryFileUpdated()
-  let isFileUpdated = booleanSettings.isFileUpdated
+  let isFileUpdatedStatus = isSummaryFileUpdated();
+  let isFileUpdated = booleanSettings.isFileUpdated;
 
   if (isFileUpdatedStatus || isFileUpdated) {
     let progressAddonSettings = {
@@ -349,7 +394,8 @@ const confirmAssistantUpdateHandler = () => {
     const apiKey = userSettings.openAiApiKey;
     const oldFileId = addonSettings.fileId;
 
-    deleteFile(assistantId, oldFileId, apiKey);
+    deleteAssistantFile(assistantId, oldFileId, apiKey);
+    deleteFile(oldFileId, apiKey)
 
     const newFileId = getUploadedFileId();
 
@@ -372,7 +418,7 @@ const confirmAssistantUpdateHandler = () => {
     const card = runAddon();
     return CardService.newNavigation().updateCard(card);
   } else {
-    console.log("There is nothing to change")
+    console.log("There is nothing to change");
   }
 };
 
