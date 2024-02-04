@@ -233,7 +233,7 @@ const handleSettingsUpdateClick = (e) => {
     currentAutoReply = currentSelectedAutoReplyValue;
   }
 
-  let apiKey = prevApiKey; 
+  let apiKey = prevApiKey;
 
   const settingsChanged =
     prevCompanyName !== currentCompanyName ||
@@ -587,13 +587,6 @@ const runAddon = () => {
 
       cardSection.addWidget(divider);
 
-      const updateAssistantButtonConfirm = CardService.newTextButton()
-        .setText("Update assistant file")
-        .setOnClickAction(confirmUpdateAssistantFileAction);
-      cardSection.addWidget(updateAssistantButtonConfirm);
-
-      cardSection.addWidget(divider);
-
       const userSettingsText =
         CardService.newTextParagraph().setText(`Addon settings:`);
       cardSection.addWidget(userSettingsText);
@@ -644,6 +637,12 @@ const runAddon = () => {
         .setText("Update settings")
         .setOnClickAction(updateUserSettingsAction);
       cardSection.addWidget(updateSettingsButton);
+      cardSection.addWidget(divider);
+
+      const updateAssistantButtonConfirm = CardService.newTextButton()
+        .setText("Update assistant file")
+        .setOnClickAction(confirmUpdateAssistantFileAction);
+      cardSection.addWidget(updateAssistantButtonConfirm);
     }
   }
 
