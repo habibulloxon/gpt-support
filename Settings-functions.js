@@ -85,7 +85,6 @@ const createSettings = () => {
       companyName: "",
       emailsLimit: 100,
       autoReply: "true",
-      model: "",
     };
 
     saveUserSettings(newUserSettings);

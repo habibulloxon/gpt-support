@@ -48,6 +48,41 @@ const sendSummaryAndAssistantCreationEmail = () => {
   console.log("Sent!");
 };
 
+const sendAssistantFileUPdatedEmail = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  let fileLink = addonSettings.docsFileLink;
+  let fileId = addonSettings.fileId;
+
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - summary created`;
+  const template = HtmlService.createTemplateFromFile(
+    "assistant-file-update-notification.html"
+  );
+
+  let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `
+    <p>Summary file</p>
+    <a href=${fileLink}>Click here to view file</a>
+
+    <p>New file ID:</p>
+    <p>${fileId}</p>
+  `;
+
+  htmlOutput = htmlOutput.replace("{{content}}", resultHTML);
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!");
+};
+
 const sendSummaryUpdateEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));

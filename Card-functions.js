@@ -414,7 +414,7 @@ const confirmAssistantUpdateHandler = () => {
     };
     saveBooleanSettings(updatedBooleanSettings);
 
-    sendSummaryUpdateEmail();
+    sendAssistantFileUPdatedEmail();
     const card = runAddon();
     return CardService.newNavigation().updateCard(card);
   } else {
