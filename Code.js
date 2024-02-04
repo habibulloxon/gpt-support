@@ -56,7 +56,7 @@ const sendAssistantFileUPdatedEmail = () => {
   let fileId = addonSettings.fileId;
 
   const email = Session.getActiveUser().getEmail();
-  const subject = `${ADDON_TITLE} - summary created`;
+  const subject = `${ADDON_TITLE} - assistant file updated`;
   const template = HtmlService.createTemplateFromFile(
     "assistant-file-update-notification.html"
   );
@@ -122,11 +122,14 @@ const convertDateToTimeStamp = (date) => {
 const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+  const addonSettings = JSON.parse(
+    userProperties.getProperty("addonSettings")
+  );
 
   let autoReply = userSettings.autoReply;
 
   if (autoReply === "true") {
-    const previousCheckDate = settings.checkTimeStamp;
+    const previousCheckDate = addonSettings.checkTimeStamp;
 
     const searchQuery = `is:unread after:${previousCheckDate}`;
     const searchedThreads = GmailApp.search(searchQuery);
@@ -245,7 +248,7 @@ const isSummaryFileUpdated = () => {
     console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
     console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
 
-    let difference =  docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
+    let difference = docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
     console.log(difference)
 
     if (parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp) {
@@ -260,18 +263,6 @@ const isSummaryFileUpdated = () => {
   }
 };
 
-function test() {
-  let status = isSummaryFileUpdated()
-  console.log(status)
-}
-
-const testParagraph = () => {
-  let lorem =
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean erat lorem, laoreet iaculis lorem ut, pharetra placerat tortor. Phasellus consectetur, lectus non ultricies tincidunt, metus velit convallis sem, sed tincidunt sapien massa eu nulla. Sed sed posuere dui. Vestibulum suscipit, arcu in scelerisque ornare, orci metus pellentesque enim, eget volutpat elit quam eget tortor. In eleifend ipsum vestibulum arcu congue posuere. Mauris mattis mauris nisi, eget aliquet velit mattis et. Praesent posuere odio at fermentum tincidunt. Nam urna augue, consectetur ac egestas non, dignissim quis turpis.";
-
-  return lorem;
-};
-
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
 
@@ -284,12 +275,10 @@ const createInboxSummary = () => {
   let docsFileId = docsFile.getId();
   let docsFileLink = DocumentApp.openById(docsFileId).getUrl();
 
-  // let inboxEmails = getAllMessages();
-  // let summarizedEmails = summarization(inboxEmails);
+  let inboxEmails = getAllMessages();
+  let summarizedEmails = summarization(inboxEmails);
 
-  let placeholderText = testParagraph();
-
-  docsFile.getBody().insertParagraph(0, placeholderText);
+  docsFile.getBody().insertParagraph(0, summarizedEmails);
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
   let docsFileLastUpdatedTimeStamp = Math.floor(
     new Date(docsFileLastUpdated).getTime() / 1000

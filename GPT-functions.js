@@ -214,7 +214,7 @@ const getAssistantThreadId = (emailThreadId) => {
     let newThreadIds = { [emailThreadId]: newAssistantThreadId };
     settingsThreadIds.push(newThreadIds);
     let updatedAddonSettings = {
-      ...settings,
+      ...addonSettings,
       threadIds: settingsThreadIds,
     };
     saveAddonSettings(updatedAddonSettings);
