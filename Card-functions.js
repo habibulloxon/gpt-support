@@ -466,7 +466,7 @@ const runAddon = () => {
   const autoReply = userSettings.autoReply;
   const fileLink = addonSettings.docsFileLink;
   const isApiKeyValid = booleanSettings.isApiKeyValid;
-  const isFileUpdated = booleanSettings.isFileUpdated;
+  const creationTime = addonSettings.summaryCreationTime
 
   // actions === functions
   const saveSettingsAction =
@@ -553,10 +553,11 @@ const runAddon = () => {
 
       let radioGroup = CardService.newSelectionInput()
         .setType(CardService.SelectionInputType.RADIO_BUTTON)
-        .setTitle("Autoreply:")
+        .setTitle("Choose option:")
         .setFieldName("radio_field")
-        .addItem("Enabled", "true", true)
-        .addItem("Disabled", "false", false);
+          .addItem("Autoreply emails", "true", true)
+          .addItem("Only add response drafts", "false", false)
+          .addItem("Everything is disabled", "false", false);
       cardSection.addWidget(radioGroup);
 
       const button = CardService.newTextButton()
@@ -565,30 +566,32 @@ const runAddon = () => {
       cardSection.addWidget(button);
     } else {
       const fileUrlText = CardService.newTextParagraph().setText(
-        `Your file was created`
+        `<b>Email summary file</b> was created at: ${creationTime}<br><a href ="${fileLink}">Click here to view summary file</a>`
       );
       cardSection.addWidget(fileUrlText);
 
-      const viewFileButton = CardService.newTextButton()
-        .setText("View File")
-        .setOpenLink(
-          CardService.newOpenLink()
-            .setUrl(`${fileLink}`)
-            .setOpenAs(CardService.OpenAs.FULL_SIZE)
-        );
-      cardSection.addWidget(viewFileButton);
-
       cardSection.addWidget(divider);
+
+      const assistantSettingsText =
+        CardService.newTextParagraph().setText(`<b>Assistant settings:</b>`);
+      cardSection.addWidget(assistantSettingsText);
+
+      const updateAssistantButtonConfirm = CardService.newTextButton()
+        .setText("Update assistant file")
+        .setBackgroundColor("#057BCD")
+        .setOnClickAction(confirmUpdateAssistantFileAction);
+      cardSection.addWidget(updateAssistantButtonConfirm);
 
       const regenerateSummaryFileBtn = CardService.newTextButton()
         .setText("Regenerate summary file")
+        .setBackgroundColor("#057BCD")
         .setOnClickAction(regenerateInboxSummaryAction);
       cardSection.addWidget(regenerateSummaryFileBtn);
 
       cardSection.addWidget(divider);
 
       const userSettingsText =
-        CardService.newTextParagraph().setText(`Addon settings:`);
+        CardService.newTextParagraph().setText(`<b>Addon settings:</b>`);
       cardSection.addWidget(userSettingsText);
 
       const companyNameInput = CardService.newTextInput()
@@ -618,37 +621,34 @@ const runAddon = () => {
       if (autoReply === "true") {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Autoreply:")
+          .setTitle("Choose option:")
           .setFieldName("radio_field")
-          .addItem("Enabled", "true", true)
-          .addItem("Disabled", "false", false);
+          .addItem("Autoreply emails", "true", true)
+          .addItem("Only add response drafts", "false", false)
+          .addItem("Everything is disabled", "false", false);
         cardSection.addWidget(radioGroup);
       } else {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Autoreply:")
+          .setTitle("Choose option:")
           .setFieldName("radio_field")
-          .addItem("Enabled", "true", false)
-          .addItem("Disabled", "false", true);
+          .addItem("Autoreply emails", "true", true)
+          .addItem("Only add response drafts", "false", false)
+          .addItem("Everything is disabled", "false", false);
         cardSection.addWidget(radioGroup);
       }
 
       const updateSettingsButton = CardService.newTextButton()
-        .setText("Update settings")
+        .setText("Update addon settings")
+        .setBackgroundColor("#198F51")
         .setOnClickAction(updateUserSettingsAction);
       cardSection.addWidget(updateSettingsButton);
-      cardSection.addWidget(divider);
-
-      const updateAssistantButtonConfirm = CardService.newTextButton()
-        .setText("Update assistant file")
-        .setOnClickAction(confirmUpdateAssistantFileAction);
-      cardSection.addWidget(updateAssistantButtonConfirm);
     }
   }
 
   const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
-    .setHeader(CardService.newCardHeader().setTitle("Configure addon"))
+    .setHeader(CardService.newCardHeader().setTitle(`Welcome to Zeva assistant!`))
     .addSection(cardSection)
     .build();
   return card;

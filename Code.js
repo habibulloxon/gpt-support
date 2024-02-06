@@ -284,11 +284,15 @@ const createInboxSummary = () => {
     new Date(docsFileLastUpdated).getTime() / 1000
   );
 
+  let summaryCreationTimeStamp = getCurrentTimeStamp()
+  let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp)
+
   let updatedAddonSettings = {
     ...addonSettings,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
+    summaryCreationTime: summaryCreationTime
   };
   saveAddonSettings(updatedAddonSettings);
 
