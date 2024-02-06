@@ -500,6 +500,11 @@ const runAddon = () => {
     );
     cardSection.addWidget(notificationText);
 
+    const notificationAssistantFileText = CardService.newTextParagraph().setText(
+      `Assistant file will be <b>automatically updated</b>`
+    );
+    cardSection.addWidget(notificationAssistantFileText);
+
     const confirmButton = CardService.newTextButton()
       .setText("Yes")
       .setOnClickAction(confirmSummaryRegenerateAction);
@@ -555,9 +560,9 @@ const runAddon = () => {
         .setType(CardService.SelectionInputType.RADIO_BUTTON)
         .setTitle("Choose option:")
         .setFieldName("radio_field")
-          .addItem("Autoreply emails", "true", true)
-          .addItem("Only add response drafts", "false", false)
-          .addItem("Everything is disabled", "false", false);
+        .addItem("Autoreply emails", "autoreply", true)
+        .addItem("Only add response drafts", "drafts", false)
+        .addItem("Everything is disabled", "disabled", false);
       cardSection.addWidget(radioGroup);
 
       const button = CardService.newTextButton()
@@ -576,17 +581,17 @@ const runAddon = () => {
         CardService.newTextParagraph().setText(`<b>Assistant settings:</b>`);
       cardSection.addWidget(assistantSettingsText);
 
-      const updateAssistantButtonConfirm = CardService.newTextButton()
-        .setText("Update assistant file")
-        .setBackgroundColor("#057BCD")
-        .setOnClickAction(confirmUpdateAssistantFileAction);
-      cardSection.addWidget(updateAssistantButtonConfirm);
-
       const regenerateSummaryFileBtn = CardService.newTextButton()
         .setText("Regenerate summary file")
         .setBackgroundColor("#057BCD")
         .setOnClickAction(regenerateInboxSummaryAction);
       cardSection.addWidget(regenerateSummaryFileBtn);
+
+      const updateAssistantButtonConfirm = CardService.newTextButton()
+        .setText("Update assistant file")
+        .setBackgroundColor("#057BCD")
+        .setOnClickAction(confirmUpdateAssistantFileAction);
+      cardSection.addWidget(updateAssistantButtonConfirm);
 
       cardSection.addWidget(divider);
 
@@ -618,23 +623,32 @@ const runAddon = () => {
         .setValue(`${apiKey}`);
       cardSection.addWidget(apiKeyInput);
 
-      if (autoReply === "true") {
+      if (autoReply === "autoreply") {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
           .setTitle("Choose option:")
           .setFieldName("radio_field")
-          .addItem("Autoreply emails", "true", true)
-          .addItem("Only add response drafts", "false", false)
-          .addItem("Everything is disabled", "false", false);
+          .addItem("Autoreply emails", "autoreply", true)
+          .addItem("Only add response drafts", "drafts", false)
+          .addItem("Everything is disabled", "disabled", false);
+        cardSection.addWidget(radioGroup);
+      } else if (autoReply === "drafts") {
+        let radioGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Choose option:")
+          .setFieldName("radio_field")
+          .addItem("Autoreply emails", "autoreply", false)
+          .addItem("Only add response drafts", "drafts", true)
+          .addItem("Everything is disabled", "disabled", false);
         cardSection.addWidget(radioGroup);
       } else {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
           .setTitle("Choose option:")
           .setFieldName("radio_field")
-          .addItem("Autoreply emails", "true", true)
-          .addItem("Only add response drafts", "false", false)
-          .addItem("Everything is disabled", "false", false);
+          .addItem("Autoreply emails", "autoreply", false)
+          .addItem("Only add response drafts", "drafts", false)
+          .addItem("Everything is disabled", "disabled", true);
         cardSection.addWidget(radioGroup);
       }
 
@@ -646,9 +660,20 @@ const runAddon = () => {
     }
   }
 
+  var fixedFooter =
+    CardService
+      .newFixedFooter()
+      .setPrimaryButton(
+        CardService
+          .newTextButton()
+          .setText("help")
+          .setOpenLink(CardService.newOpenLink().setUrl("https://zeva.vercel.app/contact-us")));
+
+
   const card = CardService.newCardBuilder()
     .setName("Beta gmail support")
     .setHeader(CardService.newCardHeader().setTitle(`Welcome to Zeva assistant!`))
+    .setFixedFooter(fixedFooter)
     .addSection(cardSection)
     .build();
   return card;

@@ -12,16 +12,10 @@
       "homepageTrigger": {
         "runFunction": "runAddon"
       },
-      "contextualTriggers": [
-        {
-          "unconditional": {},
-          "onTriggerFunction": "onGmailMessageOpen"
-        }
-      ],
       "composeTrigger": {
         "selectActions": [
           {
-            "runFunction": "onEmailCompose"
+            "runFunction": "onGmailMessageOpen"
           }
         ]
       }

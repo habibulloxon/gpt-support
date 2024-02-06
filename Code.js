@@ -128,66 +128,72 @@ const replyUnredMessages = () => {
 
   let autoReply = userSettings.autoReply;
 
-  if (autoReply === "true") {
-    const previousCheckDate = addonSettings.checkTimeStamp;
-
-    const searchQuery = `is:unread after:${previousCheckDate}`;
-    const searchedThreads = GmailApp.search(searchQuery);
-
-    let lastMessageTimeStamp;
-
-    searchedThreads.forEach((thread) => {
-      let messages = thread.getMessages();
-      let messageCount = thread.getMessageCount();
-      let lastMessage = messages[messageCount - 1];
-      let lastMessageSender = lastMessage.getFrom();
-      let lastMessageDate = lastMessage.getDate();
-
-      lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
-
-      let formattedMessageSender = formatMessageSender(lastMessageSender);
-
-      let threadId = thread.getId();
-      let message = lastMessage.getPlainBody();
-      let formattedMessage = message
-        .split("wrote:")[0]
-        .split("\n")
-        .filter((line) => line.trim() !== "")
-        .join("\n");
-
-      let assistantResponse = null;
-
-      let assistantThreadId = getAssistantThreadId(threadId);
-      addMessageToAssistantThread(assistantThreadId, formattedMessage);
-      let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
-
-      let runStatus;
-      while (
-        (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
-      ) {
-        if (runStatus === "queued") {
-          Utilities.sleep(5000);
-        }
-      }
-
-      assistantResponse = getAssistantMessages(assistantThreadId);
-
-      let formattedAssistantResponse = formatAssistantResponse(assistantResponse);
-
-      lastMessage.reply(formattedAssistantResponse);
-      thread.markRead();
-    });
-
-    let newAddonSettings = JSON.parse(
-      userProperties.getProperty("addonSettings")
-    );
-
-    let updatedAddonSettings = {
-      ...newAddonSettings,
-      checkTimeStamp: lastMessageTimeStamp,
-    };
-    saveAddonSettings(updatedAddonSettings);
+  if (autoReply !== "autoreply" && autoReply !== "drafts") {
+    return;
   }
+
+  const previousCheckDate = addonSettings.checkTimeStamp;
+
+  const searchQuery = `is:unread after:${previousCheckDate}`;
+  const searchedThreads = GmailApp.search(searchQuery);
+
+  let lastMessageTimeStamp;
+
+  searchedThreads.forEach((thread) => {
+    let messages = thread.getMessages();
+    let messageCount = thread.getMessageCount();
+    let lastMessage = messages[messageCount - 1];
+    let lastMessageSender = lastMessage.getFrom();
+    let lastMessageDate = lastMessage.getDate();
+
+    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
+
+    let formattedMessageSender = formatMessageSender(lastMessageSender);
+
+    let threadId = thread.getId();
+    let message = lastMessage.getPlainBody();
+    let formattedMessage = message
+      .split("wrote:")[0]
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .join("\n");
+
+    let assistantResponse = null;
+
+    let assistantThreadId = getAssistantThreadId(threadId);
+    addMessageToAssistantThread(assistantThreadId, formattedMessage);
+    let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
+
+    let runStatus;
+    while (
+      (runStatus = retrieveRunStatus(assistantThreadId, runId)) !== "completed"
+    ) {
+      if (runStatus === "queued") {
+        Utilities.sleep(5000);
+      }
+    }
+
+    assistantResponse = getAssistantMessages(assistantThreadId);
+
+    let formattedAssistantResponse = formatAssistantResponse(assistantResponse);
+
+    if (autoReply === "autoreply") {
+      lastMessage.reply(formattedAssistantResponse);
+      thread.markRead()
+    } else if (autoReply === "drafts") {
+      lastMessage.createDraftReply(formattedAssistantResponse);
+    }
+  });
+
+  let newAddonSettings = JSON.parse(
+    userProperties.getProperty("addonSettings")
+  );
+
+  let updatedAddonSettings = {
+    ...newAddonSettings,
+    checkTimeStamp: lastMessageTimeStamp,
+  };
+  saveAddonSettings(updatedAddonSettings);
 };
 
 const getAllMessages = () => {
@@ -353,7 +359,27 @@ const updateInboxSummary = () => {
     ...booleanSettings,
     isFileUpdated: true
   }
-  saveBooleanSettings(updatedBooleanSettings)
+  saveBooleanSettings(updatedBooleanSettings);
+
+  let newAddonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  let newUserSettings = JSON.parse(userProperties.getProperty("userSettings"));
+
+  let assistantId = newAddonSettings.assistantId;
+  let apiKey = newUserSettings.openAiApiKey;
+  let oldFileId = newAddonSettings.fileId;
+
+  deleteAssistantFile(assistantId, oldFileId, apiKey);
+  deleteFile(oldFileId, apiKey)
+
+  let newFileId = getUploadedFileId();
+
+  updateAssistantFile(apiKey, newFileId, assistantId);
+
+  let updatedAddonSettingsWithFileId = {
+    ...newAddonSettings,
+    fileId: newFileId,
+  };
+  saveAddonSettings(updatedAddonSettingsWithFileId);
 
   sendSummaryUpdateEmail();
 };

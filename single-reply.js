@@ -75,44 +75,32 @@ const replyHandler = (e) => {
   return CardService.newNavigation().updateCard(card);
 }
 
+const insertReply = () => {
+  let textToInsert = "Your text to insert goes here";
+
+  let response = CardService.newUpdateDraftActionResponseBuilder()
+    .setUpdateDraftBodyAction(CardService.newUpdateDraftBodyAction()
+      .addUpdateContent(textToInsert, CardService.ContentType.TEXT)
+      .setUpdateType(CardService.UpdateDraftBodyType.IN_PLACE_INSERT))
+    .build();
+
+  return response;
+}
+
 const onGmailMessageOpen = () => {
   const userProperties = PropertiesService.getUserProperties();
-
   const booleanSettings = JSON.parse(
     userProperties.getProperty("booleanSettings")
   );
-
-  const addonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
-
-  let creationStatus = addonSettings.responseCreationStatus;
-
   const isAssistantCreated = booleanSettings.isAssistantCreated;
-
   const cardSection = CardService.newCardSection();
-
-  const replyAction = CardService.newAction().setFunctionName(
-    "replyHandler"
-  );
+  var action = CardService.newAction().setFunctionName('insertReply');
 
   if (isAssistantCreated) {
-    if (creationStatus === "running") {
-      const notificationText = CardService.newTextParagraph().setText(
-        "Response is creating, it will be automatically sent. You can close addon/message"
-      );
-      cardSection.addWidget(notificationText);
-    } else {
-      const replyBtn = CardService.newTextButton()
-        .setText("Reply to this email")
-        .setOnClickAction(replyAction);
-      cardSection.addWidget(replyBtn);
-
-      const cautionText = CardService.newTextParagraph().setText(
-        "Caution: this button will automatically create and send response!"
-      );
-      cardSection.addWidget(cautionText);
-    }
+    const replyBtn = CardService.newTextButton()
+      .setText("Generate reply to this email")
+      .setOnClickAction(action);
+    cardSection.addWidget(replyBtn);
   } else {
     const errorText = CardService.newTextParagraph().setText(
       "Error, firstly create assistant"
