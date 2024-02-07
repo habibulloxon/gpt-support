@@ -491,12 +491,12 @@ const runAddon = () => {
   // card rendering based on several conditions
   if (mainFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      "Your settings are saving"
+      "Your assistant and email summary file are being created, this may take a few minutes. We will notify you when it is updated."
     );
     cardSection.addWidget(loadingText);
   } else if (updateFunctionStatus === "pending") {
     const notificationText = CardService.newTextParagraph().setText(
-      "Do you want to regenerate new summary and override current one?"
+      "Do you want to create a new summary and overwrite the current one?"
     );
     cardSection.addWidget(notificationText);
 
@@ -507,26 +507,29 @@ const runAddon = () => {
 
     const confirmButton = CardService.newTextButton()
       .setText("Yes")
+      .setBackgroundColor("#198F51")
       .setOnClickAction(confirmSummaryRegenerateAction);
     cardSection.addWidget(confirmButton);
 
     const denyButton = CardService.newTextButton()
       .setText("No")
+      .setBackgroundColor("#ef233c")
       .setOnClickAction(denySummaryRegenerateAction);
     cardSection.addWidget(denyButton);
   } else if (isApiKeyValid === false) {
     const errorText = CardService.newTextParagraph().setText(
-      "Entered API key is not meeting requirements, please re-enter your API key"
+      "The API key you entered does not match the requirements, please re-enter your API key. If you are experiencing any problems, please contact us at: zeva.slt@gmail.com"
     );
     cardSection.addWidget(errorText);
 
     const button = CardService.newTextButton()
       .setText("Re-enter settings")
+      .setBackgroundColor("#057BCD")
       .setOnClickAction(reEnterApiKeyAction);
     cardSection.addWidget(button);
   } else if (updateFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      "Your summary is updating"
+      "Your summary is being updated, this may take a few minutes. We will notify you when it is updated."
     );
     cardSection.addWidget(loadingText);
   } else {
@@ -558,15 +561,16 @@ const runAddon = () => {
 
       let radioGroup = CardService.newSelectionInput()
         .setType(CardService.SelectionInputType.RADIO_BUTTON)
-        .setTitle("Choose option:")
+        .setTitle("Choose action to perform:")
         .setFieldName("radio_field")
-        .addItem("Autoreply emails", "autoreply", true)
-        .addItem("Only add response drafts", "drafts", false)
+        .addItem("Reply emails automatically", "autoreply", true)
+        .addItem("Add response drafts only", "drafts", false)
         .addItem("Everything is disabled", "disabled", false);
       cardSection.addWidget(radioGroup);
 
       const button = CardService.newTextButton()
-        .setText("Save settings")
+        .setText("Create summary file")
+        .setBackgroundColor("#198F51")
         .setOnClickAction(saveSettingsAction);
       cardSection.addWidget(button);
     } else {
@@ -613,41 +617,41 @@ const runAddon = () => {
 
       const emailsLimitInput = CardService.newTextInput()
         .setFieldName("emails_limit_input")
-        .setTitle("Emails limit:")
+        .setTitle("Number of emails for summary:")
         .setValue(`${emailsLimit}`);
       cardSection.addWidget(emailsLimitInput);
 
       const apiKeyInput = CardService.newTextInput()
         .setFieldName("api_key_input")
-        .setTitle("Api key:")
+        .setTitle("OpenAI api key:")
         .setValue(`${apiKey}`);
       cardSection.addWidget(apiKeyInput);
 
       if (autoReply === "autoreply") {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Choose option:")
+          .setTitle("Choose action to perform:")
           .setFieldName("radio_field")
-          .addItem("Autoreply emails", "autoreply", true)
-          .addItem("Only add response drafts", "drafts", false)
+          .addItem("Reply emails automatically", "autoreply", true)
+          .addItem("Add response drafts only", "drafts", false)
           .addItem("Everything is disabled", "disabled", false);
         cardSection.addWidget(radioGroup);
       } else if (autoReply === "drafts") {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Choose option:")
+          .setTitle("Choose action to perform:")
           .setFieldName("radio_field")
-          .addItem("Autoreply emails", "autoreply", false)
-          .addItem("Only add response drafts", "drafts", true)
+          .addItem("Reply emails automatically", "autoreply", false)
+          .addItem("Add response drafts only", "drafts", true)
           .addItem("Everything is disabled", "disabled", false);
         cardSection.addWidget(radioGroup);
       } else {
         let radioGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Choose option:")
+          .setTitle("Choose action to perform:")
           .setFieldName("radio_field")
-          .addItem("Autoreply emails", "autoreply", false)
-          .addItem("Only add response drafts", "drafts", false)
+          .addItem("Reply emails automatically", "autoreply", false)
+          .addItem("Add response drafts only", "drafts", false)
           .addItem("Everything is disabled", "disabled", true);
         cardSection.addWidget(radioGroup);
       }
@@ -671,8 +675,7 @@ const runAddon = () => {
 
 
   const card = CardService.newCardBuilder()
-    .setName("Beta gmail support")
-    .setHeader(CardService.newCardHeader().setTitle(`Welcome to Zeva assistant!`))
+    .setName("main_card")
     .setFixedFooter(fixedFooter)
     .addSection(cardSection)
     .build();
