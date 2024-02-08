@@ -84,7 +84,7 @@ const createSettings = () => {
       openAiApiKey: "",
       companyName: "",
       emailsLimit: 100,
-      autoReply: "true",
+      autoReply: "autoreply",
     };
 
     saveUserSettings(newUserSettings);

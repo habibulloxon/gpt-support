@@ -518,7 +518,7 @@ const runAddon = () => {
     cardSection.addWidget(denyButton);
   } else if (isApiKeyValid === false) {
     const errorText = CardService.newTextParagraph().setText(
-      "The API key you entered does not match the requirements, please re-enter your API key. If you are experiencing any problems, please contact us at: zeva.slt@gmail.com"
+      `The API key you entered does not match the requirements, please re-enter your API key. If you are experiencing any problems, please contact us at: <a href="mailto:zeva.slt@gmail.com">zeva.slt@gmail.com</a>`
     );
     cardSection.addWidget(errorText);
 
@@ -533,6 +533,10 @@ const runAddon = () => {
     );
     cardSection.addWidget(loadingText);
   } else {
+    const welcomeText = CardService.newTextParagraph().setText(
+      `<b>Welcome to Zeva Assistant!<b/>`
+    );
+    cardSection.addWidget(welcomeText);
     const docFile = addonSettings.docsFileLink;
     if (docFile === "") {
       const companyNameInput = CardService.newTextInput()
