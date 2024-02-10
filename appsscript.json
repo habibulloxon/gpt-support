@@ -19,6 +19,12 @@
           }
         ]
       },
+      "contextualTriggers": [
+        {
+          "unconditional": {},
+          "onTriggerFunction": "getThreadIdFunction"
+        }
+      ],
       "primaryColor": "#057BCD",
       "secondaryColor": "#057BCD"
     }

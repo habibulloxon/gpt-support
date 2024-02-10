@@ -62,12 +62,12 @@ const timestampToDayTime = (timestamp) => {
   return `${month} ${date}, ${hour}:${minutes}`;
 }
 
-function test() {
-  let test = getCurrentTimeStamp()
-  let date = timestampToDayTime(test)
+// function test() {
+//   let test = getCurrentTimeStamp()
+//   let date = timestampToDayTime(test)
 
-  console.log(date)
-}
+//   console.log(date)
+// }
 
 const consoleAllProperties = () => {
   const userProperties = PropertiesService.getUserProperties();
@@ -87,7 +87,7 @@ const addProp = () => {
 
   let updatedSettings = {
     ...addonSettings,
-    summaryCreationTime: null
+    singleMessageId: "",
   }
 
   saveAddonSettings(updatedSettings)

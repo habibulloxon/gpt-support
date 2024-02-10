@@ -103,7 +103,8 @@ const createSettings = () => {
       messageId: "",
       threadIds: [],
       checkTimeStamp: pastTimestamp,
-      summaryCreationTime: null
+      summaryCreationTime: null,
+      singleMessageId: ""
     };
 
     saveAddonSettings(newAddonSettings);

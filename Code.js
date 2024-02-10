@@ -2,6 +2,26 @@ const ADDON_TITLE = "Email GPT support";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
 
+const getThreadIdFunction = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  let messageId = e.gmail.messageId;
+
+  let updatedAddonSettings = {
+    ...addonSettings,
+    singleMessageId: messageId
+  }
+
+  saveAddonSettings(updatedAddonSettings)
+
+  console.log(updatedAddonSettings)
+
+  const card = runAddon();
+  return card;
+}
+
+
 const formatMessageSender = (str) => {
   const parts = str.split("<");
   const contentBeforeAngleBracket = parts[0].trim();
@@ -112,11 +132,11 @@ const sendSummaryUpdateEmail = () => {
 };
 
 const convertDateToTimeStamp = (date) => {
-  let dateObject = new Date(date);
-  let parsedDateObject = Date.parse(dateObject);
-  let timeStamp = Math.floor(parsedDateObject / 1000);
+  var dateObject = new Date(date).getTime();
+  let unixTimestamp = dateObject / 1000;
+  console.log(unixTimestamp)
 
-  return timeStamp;
+  return unixTimestamp;
 };
 
 const replyUnredMessages = () => {
@@ -127,14 +147,17 @@ const replyUnredMessages = () => {
   );
 
   let autoReply = userSettings.autoReply;
+  console.log("Status: ", autoReply)
 
   if (autoReply !== "autoreply" && autoReply !== "drafts") {
     return;
   }
 
   const previousCheckDate = addonSettings.checkTimeStamp;
+  console.log(previousCheckDate)
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
+  console.log("Search query: ", searchQuery)
   const searchedThreads = GmailApp.search(searchQuery);
 
   let lastMessageTimeStamp;
