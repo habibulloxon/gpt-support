@@ -83,14 +83,14 @@ const consoleAllProperties = () => {
 
 const addProp = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
 
   let updatedSettings = {
-    ...addonSettings,
-    singleMessageId: "",
+    ...booleanSettings,
+    createSummary: "default"
   }
 
-  saveAddonSettings(updatedSettings)
+  saveBooleanSettings(updatedSettings)
 }
 
 const sendFileTG = (file) => {

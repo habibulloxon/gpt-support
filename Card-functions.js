@@ -90,6 +90,7 @@ const handleSaveClick = (e) => {
   let assistantName = e.formInput.assistant_name_input;
   let emailsLimit = e.formInput.emails_limit_input;
   let apiKey = e.formInput.api_key_input;
+  let docsFileLinkInputValue = e.formInput.knowledge_link_input;
   let autoReply = selectedAutoReplyValue.stringInputs.value[0];
 
   let apiKeyStatus = checkIsApiKeyProper(apiKey);
@@ -97,6 +98,8 @@ const handleSaveClick = (e) => {
   let keyStatus;
   let openAiApiKey;
   let mainFuncStatus;
+
+  let docsFileLink;
 
   if (apiKeyStatus) {
     openAiApiKey = apiKey;
@@ -108,8 +111,15 @@ const handleSaveClick = (e) => {
     keyStatus = false;
   }
 
+  if(docsFileLinkInputValue !== undefined){
+    docsFileLink = docsFileLinkInputValue
+  } else {
+    docsFileLink = ""
+  }
+
   let updatedAddonSettings = {
     ...addonSettings,
+    docsFileLink: docsFileLink,
     mainFunctionStatus: mainFuncStatus,
   };
   saveAddonSettings(updatedAddonSettings);
@@ -437,6 +447,25 @@ const regenerateInboxSummaryHandle = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
+const handleRadioGroupChange = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
+
+  let currentSelectedAutoReplyValue =
+    e.commonEventObject.formInputs.knowledge_file_field.stringInputs.value[0];
+
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    createSummary: currentSelectedAutoReplyValue
+  }
+  saveBooleanSettings(updatedBooleanSettings)
+
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
+}
+
 const runAddon = () => {
   // creating initial settings
   createSettings();
@@ -457,6 +486,7 @@ const runAddon = () => {
   // conditions
   const mainFunctionStatus = addonSettings.mainFunctionStatus;
   const updateFunctionStatus = addonSettings.updateFunctionStatus;
+  const createSummary = booleanSettings.createSummary
 
   // user settings from properties
   const companyName = userSettings.companyName;
@@ -469,6 +499,7 @@ const runAddon = () => {
   const creationTime = addonSettings.summaryCreationTime
 
   // actions === functions
+  const handleRadioGroupChangeAction = CardService.newAction().setFunctionName("handleRadioGroupChange")
   const saveSettingsAction =
     CardService.newAction().setFunctionName("handleSaveClick");
   const regenerateInboxSummaryAction = CardService.newAction().setFunctionName(
@@ -572,8 +603,41 @@ const runAddon = () => {
         .addItem("Everything is disabled", "disabled", false);
       cardSection.addWidget(radioGroup);
 
+      if (createSummary === "default") {
+        let knowledgeBaseGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Choose the knowledge base:")
+          .setFieldName("knowledge_file_field")
+          .addItem("Inbox based knowledge base", "default", true)
+          .addItem("Provide my own knowledge base", "own_base", false)
+          .setOnChangeAction(handleRadioGroupChangeAction)
+        cardSection.addWidget(knowledgeBaseGroup)
+      } else {
+        let knowledgeBaseGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Choose the knowledge base:")
+          .setFieldName("knowledge_file_field")
+          .addItem("Inbox based knowledge base", "default", false)
+          .addItem("Provide my own knowledge base", "own_base", true)
+          .setOnChangeAction(handleRadioGroupChangeAction)
+        cardSection.addWidget(knowledgeBaseGroup)
+      }
+
+      if (createSummary === "own_base") {
+        const knowledgeLinkInput = CardService.newTextInput()
+          .setFieldName("knowledge_link_input")
+          .setTitle("Enter knowledge base link*")
+          .setValue(`${fileLink}`);
+        cardSection.addWidget(knowledgeLinkInput);
+
+        const infoText = CardService.newTextParagraph().setText(
+          `<b>*provided link</b> have to be link of Google docs file <a href ="https://docs.google.com/document/d/1wvIjjj1tfE99LkW3MlcTYLQTmtSQv-g1hu5R2i8z6X8/edit?usp=sharing">example of knowledge base</a>`
+        );
+        cardSection.addWidget(infoText);
+      }
+
       const button = CardService.newTextButton()
-        .setText("Create summary file")
+        .setText("Save settings")
         .setBackgroundColor("#198F51")
         .setOnClickAction(saveSettingsAction);
       cardSection.addWidget(button);
@@ -659,6 +723,11 @@ const runAddon = () => {
           .addItem("Everything is disabled", "disabled", true);
         cardSection.addWidget(radioGroup);
       }
+      // const alertText = CardService.newTextParagraph().setText(
+      //   `<b>To update knowledge base file</b> update your file and then just click "Update assistant file" button\n
+      //   <a href ="${fileLink}">Knowledge base file</a>`
+      // );
+      // cardSection.addWidget(alertText);
 
       const updateSettingsButton = CardService.newTextButton()
         .setText("Update addon settings")

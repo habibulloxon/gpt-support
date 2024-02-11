@@ -300,14 +300,32 @@ const createInboxSummary = () => {
     userProperties.getProperty("booleanSettings")
   );
 
-  let docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
+  let fileLink = addonSettings.docsFileLink;
+
+  let docsFile;
+  let docsFileLink;
+
+  if (fileLink === "") {
+    docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
+  } else {
+    docsFile = DocumentApp.openByUrl(fileLink)
+  }
+
   let docsFileId = docsFile.getId();
-  let docsFileLink = DocumentApp.openById(docsFileId).getUrl();
 
-  let inboxEmails = getAllMessages();
-  let summarizedEmails = summarization(inboxEmails);
+  if (fileLink === "") {
+    docsFileLink = DocumentApp.openById(docsFileId).getUrl();
+  } else {
+    docsFileLink = fileLink
+  }
 
-  docsFile.getBody().insertParagraph(0, summarizedEmails);
+  if (fileLink === "") {
+    let inboxEmails = getAllMessages();
+    let summarizedEmails = summarization(inboxEmails);
+
+    docsFile.getBody().insertParagraph(0, summarizedEmails);
+  }
+  
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
   let docsFileLastUpdatedTimeStamp = Math.floor(
     new Date(docsFileLastUpdated).getTime() / 1000

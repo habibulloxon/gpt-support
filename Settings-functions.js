@@ -70,6 +70,7 @@ const createSettings = () => {
 
   if (!isBooleanSettingsExist) {
     newBooleanSettings = {
+      createSummary: "default",
       isFileUpdated: false,
       isAssistantCreated: false,
       isApiKeyValid: null,
