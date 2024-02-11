@@ -80,6 +80,7 @@ const onGmailMessageOpen = () => {
   } else {
     const replyBtn = CardService.newTextButton()
       .setText("Generate reply to this email")
+      .setBackgroundColor("#057BCD")
       .setOnClickAction(action);
     cardSection.addWidget(replyBtn);
   }

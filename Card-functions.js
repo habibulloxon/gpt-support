@@ -654,7 +654,7 @@ const runAddon = () => {
       cardSection.addWidget(assistantSettingsText);
 
       const regenerateSummaryFileBtn = CardService.newTextButton()
-        .setText("Regenerate summary file")
+        .setText("Generate new knowledge base")
         .setBackgroundColor("#057BCD")
         .setOnClickAction(regenerateInboxSummaryAction);
       cardSection.addWidget(regenerateSummaryFileBtn);
