@@ -111,7 +111,7 @@ const handleSaveClick = (e) => {
     keyStatus = false;
   }
 
-  if(docsFileLinkInputValue !== undefined){
+  if (docsFileLinkInputValue !== undefined) {
     docsFileLink = docsFileLinkInputValue
   } else {
     docsFileLink = ""
@@ -568,8 +568,40 @@ const runAddon = () => {
       `<b>Welcome to Zeva Assistant!<b/>`
     );
     cardSection.addWidget(welcomeText);
+    cardSection.addWidget(divider)
     const docFile = addonSettings.docsFileLink;
     if (docFile === "") {
+      if (createSummary === "default") {
+        let knowledgeBaseGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Choose the knowledge base:")
+          .setFieldName("knowledge_file_field")
+          .addItem("Inbox based knowledge base", "default", true)
+          .addItem("Provide my own knowledge base", "own_base", false)
+          .setOnChangeAction(handleRadioGroupChangeAction)
+        cardSection.addWidget(knowledgeBaseGroup)
+      } else {
+        let knowledgeBaseGroup = CardService.newSelectionInput()
+          .setType(CardService.SelectionInputType.RADIO_BUTTON)
+          .setTitle("Choose the knowledge base:")
+          .setFieldName("knowledge_file_field")
+          .addItem("Inbox based knowledge base", "default", false)
+          .addItem("Provide my own knowledge base", "own_base", true)
+          .setOnChangeAction(handleRadioGroupChangeAction)
+        cardSection.addWidget(knowledgeBaseGroup)
+      }
+      if (createSummary === "own_base") {
+        const knowledgeLinkInput = CardService.newTextInput()
+          .setFieldName("knowledge_link_input")
+          .setTitle("Enter knowledge base link*")
+          .setValue(`${fileLink}`);
+        cardSection.addWidget(knowledgeLinkInput);
+      }
+      cardSection.addWidget(divider)
+      const settingsText = CardService.newTextParagraph().setText(
+        `<b>Enter assistant settings<b/>`
+      );
+      cardSection.addWidget(settingsText);
       const companyNameInput = CardService.newTextInput()
         .setFieldName("company_name_input")
         .setTitle("Enter company name")
@@ -603,44 +635,18 @@ const runAddon = () => {
         .addItem("Everything is disabled", "disabled", false);
       cardSection.addWidget(radioGroup);
 
-      if (createSummary === "default") {
-        let knowledgeBaseGroup = CardService.newSelectionInput()
-          .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Choose the knowledge base:")
-          .setFieldName("knowledge_file_field")
-          .addItem("Inbox based knowledge base", "default", true)
-          .addItem("Provide my own knowledge base", "own_base", false)
-          .setOnChangeAction(handleRadioGroupChangeAction)
-        cardSection.addWidget(knowledgeBaseGroup)
-      } else {
-        let knowledgeBaseGroup = CardService.newSelectionInput()
-          .setType(CardService.SelectionInputType.RADIO_BUTTON)
-          .setTitle("Choose the knowledge base:")
-          .setFieldName("knowledge_file_field")
-          .addItem("Inbox based knowledge base", "default", false)
-          .addItem("Provide my own knowledge base", "own_base", true)
-          .setOnChangeAction(handleRadioGroupChangeAction)
-        cardSection.addWidget(knowledgeBaseGroup)
-      }
-
-      if (createSummary === "own_base") {
-        const knowledgeLinkInput = CardService.newTextInput()
-          .setFieldName("knowledge_link_input")
-          .setTitle("Enter knowledge base link*")
-          .setValue(`${fileLink}`);
-        cardSection.addWidget(knowledgeLinkInput);
-
-        const infoText = CardService.newTextParagraph().setText(
-          `<b>*provided link</b> have to be link of Google docs file <a href ="https://docs.google.com/document/d/1wvIjjj1tfE99LkW3MlcTYLQTmtSQv-g1hu5R2i8z6X8/edit?usp=sharing">example of knowledge base</a>`
-        );
-        cardSection.addWidget(infoText);
-      }
-
       const button = CardService.newTextButton()
         .setText("Save settings")
         .setBackgroundColor("#198F51")
         .setOnClickAction(saveSettingsAction);
       cardSection.addWidget(button);
+
+      if (createSummary === "own_base") {
+        const infoText = CardService.newTextParagraph().setText(
+          `<b>*provided link</b> have to be link of Google docs file <a href ="https://docs.google.com/document/d/1wvIjjj1tfE99LkW3MlcTYLQTmtSQv-g1hu5R2i8z6X8/edit?usp=sharing">example of knowledge base</a>`
+        );
+        cardSection.addWidget(infoText);
+      }
     } else {
       const fileUrlText = CardService.newTextParagraph().setText(
         `<b>Email summary file</b> was created at: ${creationTime}<br><a href ="${fileLink}">Click here to view summary file</a>`
