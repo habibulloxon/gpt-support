@@ -1,14 +1,12 @@
 const insertReply = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let messageId = addonSettings.singleMessageId
+  let messageId = addonSettings.singleMessageId;
 
   let message = GmailApp.getMessageById(messageId);
-  let thread = message.getThread()
-  let threadId = thread.getId()
+  let thread = message.getThread();
+  let threadId = thread.getId();
 
   let messageSender = message.getFrom();
   let formattedMessageSender = formatMessageSender(messageSender);
@@ -16,10 +14,9 @@ const insertReply = () => {
 
   let assistantResponse = null;
 
-  let assistantThreadId = getAssistantThreadId(threadId)
-  addMessageToAssistantThread(assistantThreadId, messageContent)
-  let runId = runAssistantThread(assistantThreadId, formattedMessageSender)
-
+  let assistantThreadId = getAssistantThreadId(threadId);
+  addMessageToAssistantThread(assistantThreadId, messageContent);
+  let runId = runAssistantThread(assistantThreadId, formattedMessageSender);
 
   let runStatus;
   while (
@@ -35,32 +32,32 @@ const insertReply = () => {
   let textToInsert = formattedAssistantResponse;
 
   let response = CardService.newUpdateDraftActionResponseBuilder()
-    .setUpdateDraftBodyAction(CardService.newUpdateDraftBodyAction()
-      .addUpdateContent(textToInsert, CardService.ContentType.TEXT)
-      .setUpdateType(CardService.UpdateDraftBodyType.IN_PLACE_INSERT))
+    .setUpdateDraftBodyAction(
+      CardService.newUpdateDraftBodyAction()
+        .addUpdateContent(textToInsert, CardService.ContentType.TEXT)
+        .setUpdateType(CardService.UpdateDraftBodyType.IN_PLACE_INSERT)
+    )
     .build();
 
   let updatedAddonSettings = {
     ...addonSettings,
-    singleMessageId: ""
-  }
-  saveAddonSettings(updatedAddonSettings)
+    singleMessageId: "",
+  };
+  saveAddonSettings(updatedAddonSettings);
 
   return response;
-}
+};
 
 const onGmailMessageOpen = () => {
   const userProperties = PropertiesService.getUserProperties();
   const booleanSettings = JSON.parse(
     userProperties.getProperty("booleanSettings")
   );
-  const addonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
   const isAssistantCreated = booleanSettings.isAssistantCreated;
   const singleMessageId = addonSettings.singleMessageId;
   const cardSection = CardService.newCardSection();
-  var action = CardService.newAction().setFunctionName('insertReply');
+  var action = CardService.newAction().setFunctionName("insertReply");
 
   if (!isAssistantCreated) {
     const errorText = CardService.newTextParagraph().setText(
@@ -75,8 +72,8 @@ const onGmailMessageOpen = () => {
 
     const image = CardService.newImage()
       .setImageUrl("")
-      .setAltText("Error image")
-    cardSection.addWidget(image)
+      .setAltText("Error image");
+    cardSection.addWidget(image);
   } else {
     const replyBtn = CardService.newTextButton()
       .setText("Generate reply to this email")

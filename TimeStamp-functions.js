@@ -1,4 +1,4 @@
-const PAST_TIME_STAMP_DAYS = 10
+const PAST_TIME_STAMP_DAYS = 10;
 
 /**
  * Gets current time stamp
@@ -6,8 +6,8 @@ const PAST_TIME_STAMP_DAYS = 10
  */
 const getCurrentTimeStamp = () => {
   let currentTimestamp = Math.floor(Date.now() / 1000);
-  return currentTimestamp
-}
+  return currentTimestamp;
+};
 
 /**
  * Gets three days ago time stamp
@@ -18,4 +18,4 @@ const getPastTimeStamp = () => {
   newDate.setDate(newDate.getDate() - PAST_TIME_STAMP_DAYS);
   const pastTimeStamp = Math.floor(newDate.getTime() / 1000);
   return pastTimeStamp;
-}
+};

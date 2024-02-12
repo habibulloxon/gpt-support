@@ -112,9 +112,9 @@ const handleSaveClick = (e) => {
   }
 
   if (docsFileLinkInputValue !== undefined) {
-    docsFileLink = docsFileLinkInputValue
+    docsFileLink = docsFileLinkInputValue;
   } else {
-    docsFileLink = ""
+    docsFileLink = "";
   }
 
   let updatedAddonSettings = {
@@ -405,7 +405,7 @@ const confirmAssistantUpdateHandler = () => {
     const oldFileId = addonSettings.fileId;
 
     deleteAssistantFile(assistantId, oldFileId, apiKey);
-    deleteFile(oldFileId, apiKey)
+    deleteFile(oldFileId, apiKey);
 
     const newFileId = getUploadedFileId();
 
@@ -458,13 +458,13 @@ const handleRadioGroupChange = (e) => {
 
   let updatedBooleanSettings = {
     ...booleanSettings,
-    createSummary: currentSelectedAutoReplyValue
-  }
-  saveBooleanSettings(updatedBooleanSettings)
+    createSummary: currentSelectedAutoReplyValue,
+  };
+  saveBooleanSettings(updatedBooleanSettings);
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
-}
+};
 
 const runAddon = () => {
   // creating initial settings
@@ -486,7 +486,7 @@ const runAddon = () => {
   // conditions
   const mainFunctionStatus = addonSettings.mainFunctionStatus;
   const updateFunctionStatus = addonSettings.updateFunctionStatus;
-  const createSummary = booleanSettings.createSummary
+  const createSummary = booleanSettings.createSummary;
 
   // user settings from properties
   const companyName = userSettings.companyName;
@@ -496,10 +496,12 @@ const runAddon = () => {
   const autoReply = userSettings.autoReply;
   const fileLink = addonSettings.docsFileLink;
   const isApiKeyValid = booleanSettings.isApiKeyValid;
-  const creationTime = addonSettings.summaryCreationTime
+  const creationTime = addonSettings.summaryCreationTime;
 
   // actions === functions
-  const handleRadioGroupChangeAction = CardService.newAction().setFunctionName("handleRadioGroupChange")
+  const handleRadioGroupChangeAction = CardService.newAction().setFunctionName(
+    "handleRadioGroupChange"
+  );
   const saveSettingsAction =
     CardService.newAction().setFunctionName("handleSaveClick");
   const regenerateInboxSummaryAction = CardService.newAction().setFunctionName(
@@ -531,9 +533,10 @@ const runAddon = () => {
     );
     cardSection.addWidget(notificationText);
 
-    const notificationAssistantFileText = CardService.newTextParagraph().setText(
-      `Assistant file will be <b>automatically updated</b>`
-    );
+    const notificationAssistantFileText =
+      CardService.newTextParagraph().setText(
+        `Assistant file will be <b>automatically updated</b>`
+      );
     cardSection.addWidget(notificationAssistantFileText);
 
     const confirmButton = CardService.newTextButton()
@@ -568,7 +571,7 @@ const runAddon = () => {
       `<b>Welcome to Zeva Assistant!<b/>`
     );
     cardSection.addWidget(welcomeText);
-    cardSection.addWidget(divider)
+    cardSection.addWidget(divider);
     const docFile = addonSettings.docsFileLink;
     if (docFile === "") {
       if (createSummary === "default") {
@@ -578,8 +581,8 @@ const runAddon = () => {
           .setFieldName("knowledge_file_field")
           .addItem("Inbox based knowledge base", "default", true)
           .addItem("Provide my own knowledge base", "own_base", false)
-          .setOnChangeAction(handleRadioGroupChangeAction)
-        cardSection.addWidget(knowledgeBaseGroup)
+          .setOnChangeAction(handleRadioGroupChangeAction);
+        cardSection.addWidget(knowledgeBaseGroup);
       } else {
         let knowledgeBaseGroup = CardService.newSelectionInput()
           .setType(CardService.SelectionInputType.RADIO_BUTTON)
@@ -587,8 +590,8 @@ const runAddon = () => {
           .setFieldName("knowledge_file_field")
           .addItem("Inbox based knowledge base", "default", false)
           .addItem("Provide my own knowledge base", "own_base", true)
-          .setOnChangeAction(handleRadioGroupChangeAction)
-        cardSection.addWidget(knowledgeBaseGroup)
+          .setOnChangeAction(handleRadioGroupChangeAction);
+        cardSection.addWidget(knowledgeBaseGroup);
       }
       if (createSummary === "own_base") {
         const knowledgeLinkInput = CardService.newTextInput()
@@ -597,7 +600,7 @@ const runAddon = () => {
           .setValue(`${fileLink}`);
         cardSection.addWidget(knowledgeLinkInput);
       }
-      cardSection.addWidget(divider)
+      cardSection.addWidget(divider);
       const settingsText = CardService.newTextParagraph().setText(
         `<b>Enter assistant settings<b/>`
       );
@@ -655,8 +658,9 @@ const runAddon = () => {
 
       cardSection.addWidget(divider);
 
-      const assistantSettingsText =
-        CardService.newTextParagraph().setText(`<b>Assistant settings:</b>`);
+      const assistantSettingsText = CardService.newTextParagraph().setText(
+        `<b>Assistant settings:</b>`
+      );
       cardSection.addWidget(assistantSettingsText);
 
       const regenerateSummaryFileBtn = CardService.newTextButton()
@@ -673,8 +677,9 @@ const runAddon = () => {
 
       cardSection.addWidget(divider);
 
-      const userSettingsText =
-        CardService.newTextParagraph().setText(`<b>Addon settings:</b>`);
+      const userSettingsText = CardService.newTextParagraph().setText(
+        `<b>Addon settings:</b>`
+      );
       cardSection.addWidget(userSettingsText);
 
       const companyNameInput = CardService.newTextInput()
@@ -743,15 +748,13 @@ const runAddon = () => {
     }
   }
 
-  var fixedFooter =
-    CardService
-      .newFixedFooter()
-      .setPrimaryButton(
-        CardService
-          .newTextButton()
-          .setText("help")
-          .setOpenLink(CardService.newOpenLink().setUrl("https://zeva.vercel.app/contact-us")));
-
+  var fixedFooter = CardService.newFixedFooter().setPrimaryButton(
+    CardService.newTextButton()
+      .setText("help")
+      .setOpenLink(
+        CardService.newOpenLink().setUrl("https://zeva.vercel.app/contact-us")
+      )
+  );
 
   const card = CardService.newCardBuilder()
     .setName("main_card")

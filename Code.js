@@ -10,17 +10,16 @@ const getThreadIdFunction = (e) => {
 
   let updatedAddonSettings = {
     ...addonSettings,
-    singleMessageId: messageId
-  }
+    singleMessageId: messageId,
+  };
 
-  saveAddonSettings(updatedAddonSettings)
+  saveAddonSettings(updatedAddonSettings);
 
-  console.log(updatedAddonSettings)
+  console.log(updatedAddonSettings);
 
   const card = runAddon();
   return card;
-}
-
+};
 
 const formatMessageSender = (str) => {
   const parts = str.split("<");
@@ -134,35 +133,49 @@ const sendSummaryUpdateEmail = () => {
 const convertDateToTimeStamp = (date) => {
   var dateObject = new Date(date).getTime();
   let unixTimestamp = dateObject / 1000;
-  console.log(unixTimestamp)
+  console.log(unixTimestamp);
 
   return unixTimestamp;
 };
 
+const getTimeStampDifference = (firstTimeStamp, secondTimeStamp) => {
+  let first = parseInt(firstTimeStamp);
+  let second = parseInt(secondTimeStamp);
+  let difference = second - first;
+  return difference;
+};
+
 const replyUnredMessages = () => {
+  let functionStartTimeStamp = getCurrentTimeStamp();
   const userProperties = PropertiesService.getUserProperties();
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
-  const addonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
   let autoReply = userSettings.autoReply;
-  console.log("Status: ", autoReply)
+  console.log("Status: ", autoReply);
 
   if (autoReply !== "autoreply" && autoReply !== "drafts") {
     return;
   }
 
   const previousCheckDate = addonSettings.checkTimeStamp;
-  console.log(previousCheckDate)
+  console.log(previousCheckDate);
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
-  console.log("Search query: ", searchQuery)
+  console.log("Search query: ", searchQuery);
   const searchedThreads = GmailApp.search(searchQuery);
 
   let lastMessageTimeStamp;
 
-  searchedThreads.forEach((thread) => {
+  for (let i = 0; i <= searchedThreads.length; i++) {
+    let temporaryTimeStamp = getCurrentTimeStamp();
+    let difference = getTimeStampDifference(
+      functionStartTimeStamp,
+      temporaryTimeStamp
+    );
+    if (parseInt(difference) >= 270000 || parseInt(difference) >= 330000) {
+      break;
+    }
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
@@ -202,11 +215,11 @@ const replyUnredMessages = () => {
 
     if (autoReply === "autoreply") {
       lastMessage.reply(formattedAssistantResponse);
-      thread.markRead()
+      thread.markRead();
     } else if (autoReply === "drafts") {
       lastMessage.createDraftReply(formattedAssistantResponse);
     }
-  });
+  }
 
   let newAddonSettings = JSON.parse(
     userProperties.getProperty("addonSettings")
@@ -277,14 +290,17 @@ const isSummaryFileUpdated = () => {
     console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
     console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
 
-    let difference = docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
-    console.log(difference)
+    let difference =
+      docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
+    console.log(difference);
 
-    if (parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp) {
+    if (
+      parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp
+    ) {
       if (difference < 10) {
         return false;
       } else {
-        return true
+        return true;
       }
     } else {
       return false;
@@ -308,7 +324,7 @@ const createInboxSummary = () => {
   if (fileLink === "") {
     docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
   } else {
-    docsFile = DocumentApp.openByUrl(fileLink)
+    docsFile = DocumentApp.openByUrl(fileLink);
   }
 
   let docsFileId = docsFile.getId();
@@ -316,7 +332,7 @@ const createInboxSummary = () => {
   if (fileLink === "") {
     docsFileLink = DocumentApp.openById(docsFileId).getUrl();
   } else {
-    docsFileLink = fileLink
+    docsFileLink = fileLink;
   }
 
   if (fileLink === "") {
@@ -325,21 +341,21 @@ const createInboxSummary = () => {
 
     docsFile.getBody().insertParagraph(0, summarizedEmails);
   }
-  
+
   let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
   let docsFileLastUpdatedTimeStamp = Math.floor(
     new Date(docsFileLastUpdated).getTime() / 1000
   );
 
-  let summaryCreationTimeStamp = getCurrentTimeStamp()
-  let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp)
+  let summaryCreationTimeStamp = getCurrentTimeStamp();
+  let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
 
   let updatedAddonSettings = {
     ...addonSettings,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
     lastUpdatedDate: docsFileLastUpdatedTimeStamp,
-    summaryCreationTime: summaryCreationTime
+    summaryCreationTime: summaryCreationTime,
   };
   saveAddonSettings(updatedAddonSettings);
 
@@ -355,13 +371,13 @@ const createInboxSummary = () => {
 
   Utilities.sleep(1000);
 
-  deleteTriggers()
+  deleteTriggers();
 
   Utilities.sleep(2000);
 
   sendSummaryAndAssistantCreationEmail();
 
-  installTimeDrivenTrigger()
+  installTimeDrivenTrigger();
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
@@ -371,7 +387,9 @@ const updateInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
 
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
   let docsFileId = addonSettings.docsFileId;
 
@@ -398,11 +416,13 @@ const updateInboxSummary = () => {
 
   let updatedBooleanSettings = {
     ...booleanSettings,
-    isFileUpdated: true
-  }
+    isFileUpdated: true,
+  };
   saveBooleanSettings(updatedBooleanSettings);
 
-  let newAddonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  let newAddonSettings = JSON.parse(
+    userProperties.getProperty("addonSettings")
+  );
   let newUserSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
   let assistantId = newAddonSettings.assistantId;
@@ -410,7 +430,7 @@ const updateInboxSummary = () => {
   let oldFileId = newAddonSettings.fileId;
 
   deleteAssistantFile(assistantId, oldFileId, apiKey);
-  deleteFile(oldFileId, apiKey)
+  deleteFile(oldFileId, apiKey);
 
   let newFileId = getUploadedFileId();
 

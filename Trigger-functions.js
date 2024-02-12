@@ -14,9 +14,12 @@ const installTimeDrivenTrigger = () => {
         .everyHours(1)
         .create();
     }
-    console.log("replyUnredMessages was installed as a trigger")
+    console.log("replyUnredMessages was installed as a trigger");
   } catch (error) {
-    console.error("Error in installing replyUnreadMessages trigger:", error.name);
+    console.error(
+      "Error in installing replyUnreadMessages trigger:",
+      error.name
+    );
   }
 };
 
@@ -25,7 +28,7 @@ const installSummaryCreationTriggers = () => {
     .timeBased()
     .at(new Date((getCurrentTimeStamp() + 1) * 1000))
     .create();
-  console.log("creation functions were added as a triggers")
+  console.log("creation functions were added as a triggers");
 };
 
 const installSummaryUpdateTriggers = () => {
@@ -40,9 +43,9 @@ const installResponseCreateTrigger = () => {
     .timeBased()
     .at(new Date((getCurrentTimeStamp() + 1) * 1000))
     .create();
-}
+};
 
 const deleteTriggers = () => {
   const allTriggers = ScriptApp.getProjectTriggers();
-  allTriggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
+  allTriggers.forEach((trigger) => ScriptApp.deleteTrigger(trigger));
 };

@@ -1,12 +1,12 @@
 const deleteAllProperties = () => {
   let userProperties = PropertiesService.getUserProperties();
   userProperties.deleteAllProperties();
-  console.log("All properties were deleted")
-}
+  console.log("All properties were deleted");
+};
 
 const getMonthName = (monthNumber) => {
   let monthName;
-  
+
   switch (monthNumber) {
     case 0:
       monthName = "January";
@@ -47,20 +47,20 @@ const getMonthName = (monthNumber) => {
     default:
       monthName = "Invalid month number";
   }
-  
+
   return monthName;
-}
+};
 
 const timestampToDayTime = (timestamp) => {
-  let ts = timestamp * 1000
-  let dateObj = new Date(ts)
-  let date = dateObj.getDate()
-  let monthNumber = dateObj.getMonth()
-  let month = getMonthName(monthNumber)
-  let hour = dateObj.getHours()
-  let minutes = dateObj.getMinutes()
+  let ts = timestamp * 1000;
+  let dateObj = new Date(ts);
+  let date = dateObj.getDate();
+  let monthNumber = dateObj.getMonth();
+  let month = getMonthName(monthNumber);
+  let hour = dateObj.getHours();
+  let minutes = dateObj.getMinutes();
   return `${month} ${date}, ${hour}:${minutes}`;
-}
+};
 
 // function test() {
 //   let test = getCurrentTimeStamp()
@@ -72,41 +72,46 @@ const timestampToDayTime = (timestamp) => {
 const consoleAllProperties = () => {
   const userProperties = PropertiesService.getUserProperties();
 
-  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
   console.log("booleanSettings: ", booleanSettings);
   console.log("userSettings: ", userSettings);
   console.log("addonSettings: ", addonSettings);
-}
+};
 
 const addProp = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
+  const booleanSettings = JSON.parse(
+    userProperties.getProperty("booleanSettings")
+  );
 
   let updatedSettings = {
     ...booleanSettings,
-    createSummary: "default"
-  }
+    createSummary: "default",
+  };
 
-  saveBooleanSettings(updatedSettings)
-}
+  saveBooleanSettings(updatedSettings);
+};
 
 const sendFileTG = (file) => {
-  let url = "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument"
+  let url =
+    "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendDocument";
 
   let data = {
-    'chat_id': '1265546870',
-    'document': file
+    chat_id: "1265546870",
+    document: file,
   };
 
   let options = {
-    'method': 'POST',
-    'payload': data,
+    method: "POST",
+    payload: data,
   };
 
   UrlFetchApp.fetch(url, options);
 
-  console.log("sent")
-}
+  console.log("sent");
+};
