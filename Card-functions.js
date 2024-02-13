@@ -524,7 +524,7 @@ const runAddon = () => {
   // card rendering based on several conditions
   if (mainFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      "Your assistant and email summary file are being created, this may take a few minutes. We will notify you when it is updated."
+      `Your assistant and email summary file are being created, this may take a few minutes. We will notify you when it is created via email. We will email to <b>${USER_EMAIL}</b>.`
     );
     cardSection.addWidget(loadingText);
   } else if (updateFunctionStatus === "pending") {
@@ -568,7 +568,7 @@ const runAddon = () => {
     cardSection.addWidget(loadingText);
   } else {
     const welcomeText = CardService.newTextParagraph().setText(
-      `<b>Welcome to Zeva Assistant!<b/>`
+      `<b>Welcome to ${ADDON_TITLE}!<b/>`
     );
     cardSection.addWidget(welcomeText);
     cardSection.addWidget(divider);
@@ -599,6 +599,12 @@ const runAddon = () => {
           .setTitle("Enter knowledge base link*")
           .setValue(`${fileLink}`);
         cardSection.addWidget(knowledgeLinkInput);
+
+        const infoText = CardService.newTextParagraph().setText(
+          `<b>*provided link</b> have to be link of Google docs file created by your account <b>${USER_EMAIL}</b> <a href ="https://docs.google.com/document/d/1wvIjjj1tfE99LkW3MlcTYLQTmtSQv-g1hu5R2i8z6X8/edit?usp=sharing">example of knowledge base</a>`
+        );
+        cardSection.addWidget(infoText);
+
       }
       cardSection.addWidget(divider);
       const settingsText = CardService.newTextParagraph().setText(
@@ -619,7 +625,7 @@ const runAddon = () => {
 
       const emailsLimitInput = CardService.newTextInput()
         .setFieldName("emails_limit_input")
-        .setTitle("Enter emails limit")
+        .setTitle("Enter emails limit for base generation")
         .setValue(`${emailsLimit}`);
       cardSection.addWidget(emailsLimitInput);
 
@@ -643,16 +649,9 @@ const runAddon = () => {
         .setBackgroundColor("#198F51")
         .setOnClickAction(saveSettingsAction);
       cardSection.addWidget(button);
-
-      if (createSummary === "own_base") {
-        const infoText = CardService.newTextParagraph().setText(
-          `<b>*provided link</b> have to be link of Google docs file <a href ="https://docs.google.com/document/d/1wvIjjj1tfE99LkW3MlcTYLQTmtSQv-g1hu5R2i8z6X8/edit?usp=sharing">example of knowledge base</a>`
-        );
-        cardSection.addWidget(infoText);
-      }
     } else {
       const fileUrlText = CardService.newTextParagraph().setText(
-        `<b>Email summary file</b> was created at: ${creationTime}<br><a href ="${fileLink}">Click here to view summary file</a>`
+        `<b>Knowledge base file</b> was created at: ${creationTime}<br><a href ="${fileLink}">Click here to view knowledge base file</a>`
       );
       cardSection.addWidget(fileUrlText);
 
@@ -670,7 +669,7 @@ const runAddon = () => {
       cardSection.addWidget(regenerateSummaryFileBtn);
 
       const updateAssistantButtonConfirm = CardService.newTextButton()
-        .setText("Update assistant file")
+        .setText("Apply knowledge base to assistant")
         .setBackgroundColor("#057BCD")
         .setOnClickAction(confirmUpdateAssistantFileAction);
       cardSection.addWidget(updateAssistantButtonConfirm);
@@ -696,7 +695,7 @@ const runAddon = () => {
 
       const emailsLimitInput = CardService.newTextInput()
         .setFieldName("emails_limit_input")
-        .setTitle("Number of emails for summary:")
+        .setTitle("Number of emails for knowledge base:")
         .setValue(`${emailsLimit}`);
       cardSection.addWidget(emailsLimitInput);
 

@@ -39,8 +39,10 @@ const insertReply = () => {
     )
     .build();
 
+  let newAddonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
   let updatedAddonSettings = {
-    ...addonSettings,
+    ...newAddonSettings,
     singleMessageId: "",
   };
   saveAddonSettings(updatedAddonSettings);
