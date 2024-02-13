@@ -48,7 +48,7 @@ const sendSummaryAndAssistantCreationEmail = () => {
   let htmlOutput = template.evaluate().getContent();
 
   let resultHTML = `
-    <p>Summary file</p>
+    <p><b>Knowledge base</b></p>
     <a href=${fileLink}>Click here to view file</a>
 
     <p>Assistant ID:</p>
@@ -83,7 +83,7 @@ const sendAssistantFileUPdatedEmail = () => {
   let htmlOutput = template.evaluate().getContent();
 
   let resultHTML = `
-    <p>Summary file</p>
+    <p><b>Knowledge base file</b></p>
     <a href=${fileLink}>Click here to view file</a>
 
     <p>New file ID:</p>
@@ -116,7 +116,7 @@ const sendSummaryUpdateEmail = () => {
 
   let htmlOutput = template.evaluate().getContent();
 
-  let resultHTML = `<a href=${fileLink}>Click here to view file</a>`;
+  let resultHTML = `<a href=${fileLink}>Click here to view knowledge base file</a>`;
 
   htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
 

@@ -524,12 +524,12 @@ const runAddon = () => {
   // card rendering based on several conditions
   if (mainFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      `Your assistant and email summary file are being created, this may take a few minutes. We will notify you when it is created via email. We will email to <b>${USER_EMAIL}</b>.`
+      `Your assistant and knowledge base file are being created, this may take a few minutes. We will notify you when it is created via email. We will email to <b>${USER_EMAIL}</b>.`
     );
     cardSection.addWidget(loadingText);
   } else if (updateFunctionStatus === "pending") {
     const notificationText = CardService.newTextParagraph().setText(
-      "Do you want to create a new summary and overwrite the current one?"
+      "Do you want to create a new knowledge base and overwrite the current one?"
     );
     cardSection.addWidget(notificationText);
 
@@ -563,7 +563,7 @@ const runAddon = () => {
     cardSection.addWidget(button);
   } else if (updateFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      "Your summary is being updated, this may take a few minutes. We will notify you when it is updated."
+      `Your knowledge base is being updated, this may take a few minutes. We will notify you when it is updated. We will email to <b>${USER_EMAIL}</b>.`
     );
     cardSection.addWidget(loadingText);
   } else {
@@ -733,12 +733,6 @@ const runAddon = () => {
           .addItem("Everything is disabled", "disabled", true);
         cardSection.addWidget(radioGroup);
       }
-      // const alertText = CardService.newTextParagraph().setText(
-      //   `<b>To update knowledge base file</b> update your file and then just click "Update assistant file" button\n
-      //   <a href ="${fileLink}">Knowledge base file</a>`
-      // );
-      // cardSection.addWidget(alertText);
-
       const updateSettingsButton = CardService.newTextButton()
         .setText("Update addon settings")
         .setBackgroundColor("#198F51")
