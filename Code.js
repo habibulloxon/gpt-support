@@ -165,9 +165,13 @@ const replyUnredMessages = () => {
   console.log("Search query: ", searchQuery);
   const searchedThreads = GmailApp.search(searchQuery);
 
-  let lastMessageTimeStamp;
+  let lastMessageTimeStamp = previousCheckDate;
 
-  for (let i = 0; i <= searchedThreads.length; i++) {
+  for (let i = 0; i < searchedThreads.length; i++) {
+    if(searchedThreads.length === 0){
+      break
+    }
+    let thread = searchedThreads[i]
     let temporaryTimeStamp = getCurrentTimeStamp();
     let difference = getTimeStampDifference(
       functionStartTimeStamp,

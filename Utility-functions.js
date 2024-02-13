@@ -84,17 +84,19 @@ const consoleAllProperties = () => {
 };
 
 const addProp = () => {
+  const pastTimestamp = getPastTimeStamp();
+
   const userProperties = PropertiesService.getUserProperties();
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
+  const addonSettings = JSON.parse(
+    userProperties.getProperty("addonSettings")
   );
 
   let updatedSettings = {
-    ...booleanSettings,
-    createSummary: "default",
+    ...addonSettings,
+    checkTimeStamp: pastTimestamp,
   };
 
-  saveBooleanSettings(updatedSettings);
+  saveAddonSettings(updatedSettings);
 };
 
 const sendFileTG = (file) => {
