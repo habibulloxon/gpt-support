@@ -743,7 +743,7 @@ const runAddon = () => {
 
   var fixedFooter = CardService.newFixedFooter().setPrimaryButton(
     CardService.newTextButton()
-      .setText("help")
+      .setText("contact us")
       .setOpenLink(
         CardService.newOpenLink().setUrl("https://zeva.vercel.app/contact-us")
       )

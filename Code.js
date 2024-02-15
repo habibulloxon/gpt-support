@@ -326,7 +326,7 @@ const createInboxSummary = () => {
   let docsFileLink;
 
   if (fileLink === "") {
-    docsFile = DocumentApp.create(`${USERNAME}-emails-summary`);
+    docsFile = DocumentApp.create(`${USERNAME}-knowledge-base-file`);
   } else {
     docsFile = DocumentApp.openByUrl(fileLink);
   }

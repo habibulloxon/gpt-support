@@ -72,10 +72,18 @@ const onGmailMessageOpen = () => {
     );
     cardSection.addWidget(errorText);
 
+    let imageBytes = DriveApp.getFileById("1TSWI4qU6QASq5eeuR8w7cWrlb6g-B9ls").getBlob().getBytes();
+    let encodedImageURL = "data:image/jpeg;base64," + Utilities.base64Encode(imageBytes);
+
     const image = CardService.newImage()
-      .setImageUrl("")
+      .setImageUrl(encodedImageURL)
       .setAltText("Error image");
     cardSection.addWidget(image);
+
+    const infoText = CardService.newTextParagraph().setText(
+      "When you try to generate a response for a particular email, the addon must always be open."
+    );
+    cardSection.addWidget(infoText);
   } else {
     const replyBtn = CardService.newTextButton()
       .setText("Generate reply to this email")
