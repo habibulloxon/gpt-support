@@ -1,3 +1,22 @@
+const getThreadIdFunction = (e) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  let messageId = e.gmail.messageId;
+
+  let updatedAddonSettings = {
+    ...addonSettings,
+    singleMessageId: messageId,
+  };
+
+  saveAddonSettings(updatedAddonSettings);
+
+  console.log(updatedAddonSettings);
+
+  const card = runAddon();
+  return card;
+};
+
 const insertReply = () => {
   const userProperties = PropertiesService.getUserProperties();
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));

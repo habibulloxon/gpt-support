@@ -1,7 +1,27 @@
-const deleteAllProperties = () => {
-  let userProperties = PropertiesService.getUserProperties();
-  userProperties.deleteAllProperties();
-  console.log("All properties were deleted");
+const convertDateToTimeStamp = (date) => {
+  var dateObject = new Date(date).getTime();
+  let unixTimestamp = dateObject / 1000;
+  console.log(unixTimestamp);
+
+  return unixTimestamp;
+};
+
+const getTimeStampDifference = (firstTimeStamp, secondTimeStamp) => {
+  let first = parseInt(firstTimeStamp);
+  let second = parseInt(secondTimeStamp);
+  let difference = second - first;
+  return difference;
+};
+
+const formatMessageSender = (str) => {
+  const parts = str.split("<");
+  const contentBeforeAngleBracket = parts[0].trim();
+  return contentBeforeAngleBracket.replace(/"/g, "");
+};
+
+const formatAssistantResponse = (inputString) => {
+  let outputString = inputString.replace(/【.*?】/g, "");
+  return outputString;
 };
 
 const getMonthName = (monthNumber) => {
@@ -60,43 +80,6 @@ const timestampToDayTime = (timestamp) => {
   let hour = dateObj.getHours();
   let minutes = dateObj.getMinutes();
   return `${month} ${date}, ${hour}:${minutes}`;
-};
-
-// function test() {
-//   let test = getCurrentTimeStamp()
-//   let date = timestampToDayTime(test)
-
-//   console.log(date)
-// }
-
-const consoleAllProperties = () => {
-  const userProperties = PropertiesService.getUserProperties();
-
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
-  );
-  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-
-  console.log("booleanSettings: ", booleanSettings);
-  console.log("userSettings: ", userSettings);
-  console.log("addonSettings: ", addonSettings);
-};
-
-const addProp = () => {
-  const pastTimestamp = getPastTimeStamp();
-
-  const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
-
-  let updatedSettings = {
-    ...addonSettings,
-    checkTimeStamp: pastTimestamp,
-  };
-
-  saveAddonSettings(updatedSettings);
 };
 
 const sendFileTG = (file) => {
