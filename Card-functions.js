@@ -34,47 +34,6 @@ const denySummaryRegenerateHandler = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
-/**
- * Checks is API_KEY proper or not.
- *
- * @param {string} a - api key.
- * @returns {boolean} true - valid | false - invalid.
- */
-
-const checkIsApiKeyProper = (apiKey) => {
-  const url = "https://api.openai.com/v1/chat/completions";
-
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
-
-  const options = {
-    headers,
-    method: "GET",
-    muteHttpExceptions: true,
-    payload: JSON.stringify({
-      model: "gpt-4-1106-preview",
-      messages: [
-        {
-          role: "system",
-          content: `Answer very shortly`,
-        },
-        {
-          role: "user",
-          content: "2+2=?",
-        },
-      ],
-      temperature: 0,
-    }),
-  };
-
-  const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
-  const isValid = response.hasOwnProperty("error");
-
-  return !isValid;
-};
-
 const handleSaveClick = (e) => {
   const userProperties = PropertiesService.getUserProperties();
 
@@ -150,44 +109,6 @@ const handleSaveClick = (e) => {
 
   let card = runAddon();
   return CardService.newNavigation().updateCard(card);
-};
-
-const updateAssistantInstructions = () => {
-  const userProperties = PropertiesService.getUserProperties();
-
-  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-
-  const apiKey = userSettings.openAiApiKey;
-  const assistantId = addonSettings.assistantId;
-  const companyName = userSettings.companyName;
-  const name = userSettings.assistantName;
-  const fileId = addonSettings.fileId;
-
-  let url = `https://api.openai.com/v1/assistants/${assistantId}`;
-
-  let headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-    "OpenAI-Beta": "assistants=v1",
-  };
-
-  let payload = {
-    instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
-    tools: [{ type: "retrieval" }],
-    model: "gpt-4-1106-preview",
-    file_ids: [`${fileId}`],
-  };
-
-  let options = {
-    method: "post",
-    contentType: "application/json",
-    headers: headers,
-    payload: JSON.stringify(payload),
-  };
-
-  let response = UrlFetchApp.fetch(url, options);
-  console.log(JSON.stringify(response));
 };
 
 const handleSettingsUpdateClick = (e) => {
@@ -325,60 +246,6 @@ const reEnterApiKeyHandler = () => {
 
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
-};
-
-const deleteAssistantFile = (assistantId, fileId, apiKey) => {
-  var url = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`;
-  var headers = {
-    Authorization: "Bearer " + apiKey,
-    "Content-Type": "application/json",
-    "OpenAI-Beta": "assistants=v1",
-  };
-
-  var options = {
-    method: "DELETE",
-    headers: headers,
-  };
-
-  UrlFetchApp.fetch(url, options);
-};
-
-const deleteFile = (fileId, apiKey) => {
-  var url = `https://api.openai.com/v1/files/${fileId}`;
-  var headers = {
-    Authorization: "Bearer " + apiKey,
-    "Content-Type": "application/json",
-    "OpenAI-Beta": "assistants=v1",
-  };
-
-  var options = {
-    method: "DELETE",
-    headers: headers,
-  };
-
-  UrlFetchApp.fetch(url, options);
-};
-
-const updateAssistantFile = (apiKey, fileId, assistantId) => {
-  let url = `https://api.openai.com/v1/assistants/${assistantId}`;
-
-  var headers = {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + apiKey,
-    "OpenAI-Beta": "assistants=v1",
-  };
-
-  var payload = {
-    file_ids: [`${fileId}`],
-  };
-
-  var options = {
-    method: "POST",
-    headers: headers,
-    payload: JSON.stringify(payload),
-  };
-
-  UrlFetchApp.fetch(url, options);
 };
 
 const confirmAssistantUpdateHandler = () => {
