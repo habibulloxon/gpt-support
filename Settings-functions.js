@@ -131,3 +131,14 @@ const deleteAllProperties = () => {
   userProperties.deleteAllProperties();
   console.log("All properties were deleted");
 };
+
+const changeProperty = () => {
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  let updatedSettings = {
+    ...addonSettings,
+    threadIds: []
+  }
+  saveAddonSettings(updatedSettings)
+}

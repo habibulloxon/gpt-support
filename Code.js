@@ -1,6 +1,8 @@
 const ADDON_TITLE = "Email GPT support";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
+const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
+const SAFETY_MARGIN = 20000; // 20 seconds safety margin
 
 const replyUnredMessages = () => {
   let functionStartTimeStamp = getCurrentTimeStamp();
@@ -16,34 +18,32 @@ const replyUnredMessages = () => {
   }
 
   const previousCheckDate = addonSettings.checkTimeStamp;
-  console.log(previousCheckDate);
+  console.log("previousCheckDate: ", previousCheckDate);
 
   const searchQuery = `is:unread after:${previousCheckDate}`;
   console.log("Search query: ", searchQuery);
   const searchedThreads = GmailApp.search(searchQuery);
 
-  let lastMessageTimeStamp = previousCheckDate;
+  let lastMessageTimeStamp = null;
 
   for (let i = 0; i < searchedThreads.length; i++) {
-    if(searchedThreads.length === 0){
+    if (searchedThreads.length === 0) {
       break
     }
-    let thread = searchedThreads[i]
-    let temporaryTimeStamp = getCurrentTimeStamp();
-    let difference = getTimeStampDifference(
-      functionStartTimeStamp,
-      temporaryTimeStamp
-    );
-    if (parseInt(difference) >= 270000 || parseInt(difference) >= 330000) {
+    if (getCurrentTimeStamp() - functionStartTimeStamp > MAX_EXECUTION_TIME - SAFETY_MARGIN) {
+      console.log("Approaching the maximum execution time. Saving progress and stopping.");
       break;
     }
+    let thread = searchedThreads[i]
     let messages = thread.getMessages();
     let messageCount = thread.getMessageCount();
     let lastMessage = messages[messageCount - 1];
     let lastMessageSender = lastMessage.getFrom();
     let lastMessageDate = lastMessage.getDate();
 
-    lastMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
+    let currentMessageTimeStamp = convertDateToTimeStamp(lastMessageDate);
+
+    lastMessageTimeStamp = currentMessageTimeStamp
 
     let formattedMessageSender = formatMessageSender(lastMessageSender);
 
@@ -81,6 +81,7 @@ const replyUnredMessages = () => {
       lastMessage.createDraftReply(formattedAssistantResponse);
     }
   }
+  console.log("END OF FOR LOOP")
 
   let newAddonSettings = JSON.parse(
     userProperties.getProperty("addonSettings")

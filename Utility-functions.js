@@ -1,7 +1,7 @@
 const convertDateToTimeStamp = (date) => {
   var dateObject = new Date(date).getTime();
   let unixTimestamp = dateObject / 1000;
-  console.log(unixTimestamp);
+  console.log("unixTimestamp: ", unixTimestamp);
 
   return unixTimestamp;
 };

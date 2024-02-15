@@ -124,7 +124,7 @@ const checkIsApiKeyProper = (apiKey) => {
     }),
   };
 
-  const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+  const response = JSON.parse(UrlFetchApp.fetch(url, options));
   const isValid = response.hasOwnProperty("error");
 
   return !isValid;
@@ -303,25 +303,40 @@ const createNewThread = () => {
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
   let apiKey = userSettings.openAiApiKey;
-  try {
-    let url = "https://api.openai.com/v1/threads";
-    let headers = {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "OpenAI-Beta": "assistants=v1",
-    };
-    let options = {
-      method: "post",
-      headers: headers,
-      payload: JSON.stringify({}),
-    };
-    let response = UrlFetchApp.fetch(url, options);
-    let result = JSON.parse(response);
-    let threadId = result.id;
-    return threadId;
-  } catch (error) {
-    console.error("Error in creating new thread:", error);
+  let maxRetries = 10; // Set the maximum number of retries
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      let url = "https://api.openai.com/v1/threads";
+      let headers = {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v1",
+      };
+      let options = {
+        method: "post",
+        headers: headers,
+        payload: JSON.stringify({}),
+      };
+      let response = UrlFetchApp.fetch(url, options);
+      let result = JSON.parse(response);
+      let status = result.hasOwnProperty("error")
+      if (!status) {
+        let threadId = result.id;
+        return threadId; // Return the thread ID if creation was successful
+      } else {
+        console.error(`Error in creating new thread: ${response.getContentText()}`);
+      }
+    } catch (error) {
+      console.error(`Error in creating new thread: ${error}`);
+    }
+
+    attempt++;
+    Utilities.sleep(2000);
   }
+
+  throw new Error("Failed to create a new thread after several attempts.");
 };
 
 /**
