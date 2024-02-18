@@ -80,7 +80,7 @@ const onGmailMessageOpen = () => {
   const cardSection = CardService.newCardSection();
   var action = CardService.newAction().setFunctionName("insertReply");
 
-  if (!isAssistantCreated) {
+  if (!isAssistantCreated || isAssistantCreated === null) {
     const errorText = CardService.newTextParagraph().setText(
       "Error, firstly create assistant"
     );

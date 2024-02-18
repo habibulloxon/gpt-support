@@ -16,7 +16,7 @@
   "runtimeVersion": "V8",
   "addOns": {
     "common": {
-      "name": "Zeva assistant - v1",
+      "name": "ZevaAI GPT assistant for Gmail™",
       "logoUrl": "https://zeva.vercel.app/assets/item-tYnBQQgX.jpg"
     },
     "gmail": {

@@ -1,4 +1,4 @@
-const ADDON_TITLE = "Email GPT support";
+const ADDON_TITLE = "ZevaAI GPT assistant for Gmail™";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
@@ -20,7 +20,7 @@ const replyUnredMessages = () => {
   const previousCheckDate = addonSettings.checkTimeStamp;
   console.log("previousCheckDate: ", previousCheckDate);
 
-  const searchQuery = `is:unread after:${previousCheckDate}`;
+  const searchQuery = `is:unread after:${previousCheckDate} category:primary`;
   console.log("Search query: ", searchQuery);
   const searchedThreads = GmailApp.search(searchQuery);
 
@@ -81,7 +81,7 @@ const replyUnredMessages = () => {
       lastMessage.createDraftReply(formattedAssistantResponse);
     }
   }
-  console.log("END OF FOR LOOP")
+  console.log("Reply process stopped")
 
   let newAddonSettings = JSON.parse(
     userProperties.getProperty("addonSettings")
@@ -180,8 +180,8 @@ const createInboxSummary = () => {
 
   let fileLink = addonSettings.docsFileLink;
 
-  let docsFile;
-  let docsFileLink;
+  let docsFile = null;
+  let docsFileLink = "";
 
   if (fileLink === "") {
     docsFile = DocumentApp.create(`${USERNAME}-knowledge-base-file`);
@@ -254,9 +254,12 @@ const updateInboxSummary = () => {
   );
 
   let docsFileId = addonSettings.docsFileId;
+  console.log(docsFileId)
 
   let docsFile = DocumentApp.openById(docsFileId);
   let docBody = docsFile.getBody();
+
+  console.log(docBody)
 
   docBody.clear();
 
@@ -298,9 +301,13 @@ const updateInboxSummary = () => {
 
   updateAssistantFile(apiKey, newFileId, assistantId);
 
+  let summaryCreationTimeStamp = getCurrentTimeStamp();
+  let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
+
   let updatedAddonSettingsWithFileId = {
     ...newAddonSettings,
     fileId: newFileId,
+    summaryCreationTime: summaryCreationTime
   };
   saveAddonSettings(updatedAddonSettingsWithFileId);
 

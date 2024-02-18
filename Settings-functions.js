@@ -81,7 +81,7 @@ const createSettings = () => {
 
   if (!isUserSettingsExist) {
     newUserSettings = {
-      assistantName: U,// "Zeva"
+      assistantName: USERNAME,// "Zeva"
       openAiApiKey: "",
       companyName: "",
       emailsLimit: 100,
