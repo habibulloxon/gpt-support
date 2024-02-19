@@ -1,6 +1,7 @@
 const ADDON_TITLE = "ZevaAI GPT assistant for Gmail™";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
+const INSTRUCTIONS_URL = "https://zeva-solutions.notion.site/zeva-solutions/ZevaAI-GPT-assistant-for-Gmail-8933ea29499747c8afff0316fb67c807"
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
 const SAFETY_MARGIN = 20000; // 20 seconds safety margin
 
@@ -9,6 +10,12 @@ const replyUnredMessages = () => {
   const userProperties = PropertiesService.getUserProperties();
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+
+  const apiKey = userSettings.openAiApiKey
+
+  if(apiKey === "") {
+    return;
+  }
 
   let autoReply = userSettings.autoReply;
   console.log("Status: ", autoReply);
@@ -20,7 +27,7 @@ const replyUnredMessages = () => {
   const previousCheckDate = addonSettings.checkTimeStamp;
   console.log("previousCheckDate: ", previousCheckDate);
 
-  const searchQuery = `is:unread after:${previousCheckDate} category:primary`;
+  const searchQuery = `is:unread after:${previousCheckDate}`;
   console.log("Search query: ", searchQuery);
   const searchedThreads = GmailApp.search(searchQuery);
 
@@ -86,6 +93,10 @@ const replyUnredMessages = () => {
   let newAddonSettings = JSON.parse(
     userProperties.getProperty("addonSettings")
   );
+
+  if(lastMessageTimeStamp === null){
+    lastMessageTimeStamp = newAddonSettings.checkTimeStamp
+  }
 
   let updatedAddonSettings = {
     ...newAddonSettings,
