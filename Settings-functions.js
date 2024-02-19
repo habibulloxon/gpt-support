@@ -126,19 +126,23 @@ const consoleAllProperties = () => {
   console.log("addonSettings: ", addonSettings);
 };
 
-const deleteAllProperties = () => {
-  let userProperties = PropertiesService.getUserProperties();
-  userProperties.deleteAllProperties();
-  console.log("All properties were deleted");
-};
-
 const changeProperty = () => {
   const userProperties = PropertiesService.getUserProperties();
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
   let updatedSettings = {
     ...addonSettings,
-    threadIds: []
+    singleMessageId: ""
   }
   saveAddonSettings(updatedSettings)
 }
+
+// DANGER ZONE
+
+/* 
+const deleteAllProperties = () => {
+  let userProperties = PropertiesService.getUserProperties();
+  userProperties.deleteAllProperties();
+  console.log("All properties were deleted");
+};
+*/

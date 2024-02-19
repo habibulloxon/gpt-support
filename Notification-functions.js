@@ -1,3 +1,9 @@
+function sendAllEmails() {
+  sendSummaryAndAssistantCreationEmail()
+  sendAssistantFileUPdatedEmail()
+  sendSummaryUpdateEmail()
+}
+
 const sendSummaryAndAssistantCreationEmail = () => {
   const userProperties = PropertiesService.getUserProperties();
   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
@@ -6,7 +12,7 @@ const sendSummaryAndAssistantCreationEmail = () => {
   let assistantId = addonSettings.assistantId;
 
   const email = Session.getActiveUser().getEmail();
-  const subject = `${ADDON_TITLE} - summary created`;
+  const subject = `${ADDON_TITLE} - knowledge base created`;
   const template = HtmlService.createTemplateFromFile(
     "creation-notification.html"
   );
@@ -14,11 +20,11 @@ const sendSummaryAndAssistantCreationEmail = () => {
   let htmlOutput = template.evaluate().getContent();
 
   let resultHTML = `
-      <p><b>Knowledge base</b></p>
-      <a href=${fileLink}>Click here to view file</a>
-  
-      <p>Assistant ID:</p>
-      <p>${assistantId}</p>
+      <a href="${fileLink}" class="btn">View Your Knowledge Base</a>
+      <p>If you need any assistance or have questions, feel free to reach out.</p>
+      <div class="footer">
+      <p>Your Assistant ID: <strong>${assistantId}</strong></p>
+      </div>
     `;
 
   htmlOutput = htmlOutput.replace("{{content}}", resultHTML);
@@ -49,11 +55,11 @@ const sendAssistantFileUPdatedEmail = () => {
   let htmlOutput = template.evaluate().getContent();
 
   let resultHTML = `
-      <p><b>Knowledge base file</b></p>
-      <a href=${fileLink}>Click here to view file</a>
-  
-      <p>New file ID:</p>
-      <p>${fileId}</p>
+      <a href="${fileLink}">View knowledge base</a>
+
+<div class="footer">
+    <p>New File ID: <strong>${fileId}</strong></p>
+</div>
     `;
 
   htmlOutput = htmlOutput.replace("{{content}}", resultHTML);
@@ -75,14 +81,14 @@ const sendSummaryUpdateEmail = () => {
   let fileLink = addonSettings.docsFileLink;
 
   const email = Session.getActiveUser().getEmail();
-  const subject = `${ADDON_TITLE} - summary updated`;
+  const subject = `${ADDON_TITLE} - knowledge base updated`;
   const template = HtmlService.createTemplateFromFile(
     "summary-update-notification.html"
   );
 
   let htmlOutput = template.evaluate().getContent();
 
-  let resultHTML = `<a href=${fileLink}>Click here to view knowledge base file</a>`;
+  let resultHTML = `<a href="${fileLink}" class="btn">View latest knowledge base</a>`;
 
   htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
 
