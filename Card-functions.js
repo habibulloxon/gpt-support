@@ -611,6 +611,18 @@ const runAddon = () => {
         .setBackgroundColor("#198F51")
         .setOnClickAction(updateUserSettingsAction);
       cardSection.addWidget(updateSettingsButton);
+
+      cardSection.addWidget(divider)
+
+      const leadingText = CardService.newTextParagraph()
+        .setText("Need help? Read our step-by-step guide")
+      cardSection.addWidget(leadingText);
+      const instructionsButton = CardService.newTextButton()
+        .setAltText("Step-by-step guide")
+        .setText("ℹ️ Step-by-step guide")
+        .setBackgroundColor("#F57C00")
+        .setOpenLink(CardService.newOpenLink().setUrl(INSTRUCTIONS_URL))
+      cardSection.addWidget(instructionsButton)
     }
   }
 
