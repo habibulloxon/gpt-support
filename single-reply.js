@@ -95,21 +95,13 @@ const onGmailMessageOpen = () => {
       .setAltText("Step-by-step guide")
       .setText("ℹ️ Step-by-step guide")
       .setBackgroundColor("#F57C00")
-      .setOpenLink(CardService.newOpenLink().setUrl(INSTRUCTIONS_URL))
+      .setOpenLink(CardService.newOpenLink().setUrl(SINGLE_REPLY_INSTRUCTIONS))
     cardSection.addWidget(instructionsButton)
   } else if (singleMessageId === "") {
     const errorText = CardService.newTextParagraph().setText(
       `<b>Error:</b> The add-on is currently closed. Please open the ${ADDON_TITLE} add-on to proceed with generating a response.`
     );
     cardSection.addWidget(errorText);
-
-    let imageBytes = DriveApp.getFileById("1TSWI4qU6QASq5eeuR8w7cWrlb6g-B9ls").getBlob().getBytes();
-    let encodedImageURL = "data:image/jpeg;base64," + Utilities.base64Encode(imageBytes);
-
-    const image = CardService.newImage()
-      .setImageUrl(encodedImageURL)
-      .setAltText("Error image");
-    cardSection.addWidget(image);
 
     const infoText = CardService.newTextParagraph().setText(
       "Please ensure that the add-on remains open while generating a response for an email. This is necessary for the assistant to function correctly and provide you with a timely reply."
@@ -124,7 +116,7 @@ const onGmailMessageOpen = () => {
       .setAltText("Step-by-step guide")
       .setText("ℹ️ Step-by-step guide")
       .setBackgroundColor("#F57C00")
-      .setOpenLink(CardService.newOpenLink().setUrl(INSTRUCTIONS_URL))
+      .setOpenLink(CardService.newOpenLink().setUrl(SINGLE_REPLY_INSTRUCTIONS))
     cardSection.addWidget(instructionsButton)
   } else {
     const replyBtn = CardService.newTextButton()

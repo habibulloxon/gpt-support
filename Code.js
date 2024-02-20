@@ -2,6 +2,7 @@ const ADDON_TITLE = "ZevaAI GPT assistant for Gmail™";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
 const INSTRUCTIONS_URL = "https://zeva-solutions.notion.site/zeva-solutions/ZevaAI-GPT-assistant-for-Gmail-8933ea29499747c8afff0316fb67c807"
+const SINGLE_REPLY_INSTRUCTIONS = "https://zeva-solutions.notion.site/ZevaAI-GPT-assistant-for-Gmail-Step-by-step-guide-for-Single-reply-feature-f950f7b3e8c4433492a26f2aa3f29135?pvs=4"
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
 const SAFETY_MARGIN = 20000; // 20 seconds safety margin
 
