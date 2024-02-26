@@ -1,4 +1,4 @@
-const ADDON_TITLE = "ZevaAI GPT assistant for Gmail™";
+const ADDON_TITLE = "ZevaAI - GPT assistant for Gmail™";
 const USER_EMAIL = Session.getActiveUser().getEmail();
 const USERNAME = USER_EMAIL.split("@")[0].toLowerCase().replace(/\./g, "-");
 const INSTRUCTIONS_URL = "https://zeva-solutions.notion.site/zeva-solutions/ZevaAI-GPT-assistant-for-Gmail-8933ea29499747c8afff0316fb67c807"
@@ -15,6 +15,7 @@ const replyUnredMessages = () => {
   const apiKey = userSettings.openAiApiKey
 
   if(apiKey === "") {
+    console.log("Api key is empty. Execution stoped")
     return;
   }
 
@@ -256,6 +257,7 @@ const createInboxSummary = () => {
   const card = runAddon();
   return CardService.newNavigation().updateCard(card);
 };
+
 
 const updateInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();

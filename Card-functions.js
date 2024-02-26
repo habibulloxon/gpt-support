@@ -147,7 +147,7 @@ const handleSettingsUpdateClick = (e) => {
   }
 
   if (e.formInput.api_key_input === undefined) {
-    currentApiKey = prevApiKey;
+    currentApiKey = "";
   } else {
     currentApiKey = e.formInput.api_key_input;
   }
@@ -164,7 +164,7 @@ const handleSettingsUpdateClick = (e) => {
     currentAutoReply = currentSelectedAutoReplyValue;
   }
 
-  let apiKey = prevApiKey;
+  let apiKey = "";
 
   const settingsChanged =
     prevCompanyName !== currentCompanyName ||
@@ -173,18 +173,20 @@ const handleSettingsUpdateClick = (e) => {
     prevEmailsLimit !== currentEmailsLimit ||
     prevAutoReply !== currentAutoReply;
 
-  if (prevApiKey !== currentApiKey) {
-    let apiKeyStatus = checkIsApiKeyProper(currentApiKey);
-    if (apiKeyStatus) {
-      apiKey = currentApiKey;
-    } else {
-      apiKey = "";
-      const updatedSettings = {
-        ...booleanSettings,
-        isApiKeyValid: false,
-      };
+  if (currentApiKey !== "") {
+    if (prevApiKey !== currentApiKey) {
+      let apiKeyStatus = checkIsApiKeyProper(currentApiKey);
+      if (apiKeyStatus) {
+        apiKey = currentApiKey;
+      } else {
+        apiKey = "";
+        const updatedSettings = {
+          ...booleanSettings,
+          isApiKeyValid: false,
+        };
 
-      saveBooleanSettings(updatedSettings);
+        saveBooleanSettings(updatedSettings);
+      }
     }
   }
 
