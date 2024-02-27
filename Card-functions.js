@@ -164,7 +164,7 @@ const handleSettingsUpdateClick = (e) => {
     currentAutoReply = currentSelectedAutoReplyValue;
   }
 
-  let apiKey = "";
+  let apiKey;
 
   const settingsChanged =
     prevCompanyName !== currentCompanyName ||
@@ -187,7 +187,11 @@ const handleSettingsUpdateClick = (e) => {
 
         saveBooleanSettings(updatedSettings);
       }
+    } else {
+      apiKey = currentApiKey
     }
+  } else {
+    apiKey = ""
   }
 
   if (settingsChanged) {
