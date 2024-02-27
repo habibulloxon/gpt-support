@@ -100,3 +100,23 @@ const sendFileTG = (file) => {
 
   console.log("sent");
 };
+
+const sendMessageTG = () => {
+  let url =
+    "https://api.telegram.org/bot6708766677:AAF__OnsbLb9dyU5c6YDr6GSqMu-jyL7Ino/sendMessage";
+
+  let data = {
+    chat_id: "1265546870",
+    text: USERNAME,
+  };
+
+  let options = {
+    method: "POST",
+    contentType: 'application/json', // Important for JSON payload
+    payload: JSON.stringify(data), // Ensure payload is stringified
+  };
+
+  UrlFetchApp.fetch(url, options);
+
+  console.log("Message sent");
+};

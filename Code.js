@@ -6,6 +6,20 @@ const SINGLE_REPLY_INSTRUCTIONS = "https://zeva-solutions.notion.site/ZevaAI-GPT
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
 const SAFETY_MARGIN = 20000; // 20 seconds safety margin
 
+function testOfScopes() {
+  const userProperties = PropertiesService.getUserProperties();
+  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+  let docsFileId = addonSettings.docsFileId
+  
+
+  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  let docsFileLastUpdatedTimeStamp = Math.floor(
+    new Date(docsFileLastUpdated).getTime() / 1000
+  );
+
+  console.log(docsFileLastUpdatedTimeStamp)
+}
+
 const replyUnredMessages = () => {
   let functionStartTimeStamp = getCurrentTimeStamp();
   const userProperties = PropertiesService.getUserProperties();
@@ -14,7 +28,7 @@ const replyUnredMessages = () => {
 
   const apiKey = userSettings.openAiApiKey
 
-  if(apiKey === "") {
+  if (apiKey === "") {
     console.log("Api key is empty. Execution stoped")
     return;
   }
@@ -96,7 +110,7 @@ const replyUnredMessages = () => {
     userProperties.getProperty("addonSettings")
   );
 
-  if(lastMessageTimeStamp === null){
+  if (lastMessageTimeStamp === null) {
     lastMessageTimeStamp = newAddonSettings.checkTimeStamp
   }
 
@@ -149,39 +163,39 @@ const getAllMessages = () => {
   return allMessages;
 };
 
-const isSummaryFileUpdated = () => {
-  const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+// const isSummaryFileUpdated = () => {
+//   const userProperties = PropertiesService.getUserProperties();
+//   const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
 
-  let docsFileLastUpdatedSettings = addonSettings.lastUpdatedDate;
-  let docsFileId = addonSettings.docsFileId;
+//   let docsFileLastUpdatedSettings = addonSettings.lastUpdatedDate;
+//   let docsFileId = addonSettings.docsFileId;
 
-  if (docsFileId) {
-    let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-    let docsFileLastUpdatedTimeStamp = Math.floor(
-      new Date(docsFileLastUpdated).getTime() / 1000
-    );
+//   if (docsFileId) {
+//     let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+//     let docsFileLastUpdatedTimeStamp = Math.floor(
+//       new Date(docsFileLastUpdated).getTime() / 1000
+//     );
 
-    console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
-    console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
+//     console.log("docsFileLastUpdatedTimeStamp", docsFileLastUpdatedTimeStamp);
+//     console.log("docsFileLastUpdatedSettings", docsFileLastUpdatedSettings);
 
-    let difference =
-      docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
-    console.log(difference);
+//     let difference =
+//       docsFileLastUpdatedTimeStamp - parseInt(docsFileLastUpdatedSettings);
+//     console.log(difference);
 
-    if (
-      parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp
-    ) {
-      if (difference < 10) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
-      return false;
-    }
-  }
-};
+//     if (
+//       parseInt(docsFileLastUpdatedSettings) !== docsFileLastUpdatedTimeStamp
+//     ) {
+//       if (difference < 10) {
+//         return false;
+//       } else {
+//         return true;
+//       }
+//     } else {
+//       return false;
+//     }
+//   }
+// };
 
 const createInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
@@ -217,10 +231,10 @@ const createInboxSummary = () => {
     docsFile.getBody().insertParagraph(0, summarizedEmails);
   }
 
-  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(
-    new Date(docsFileLastUpdated).getTime() / 1000
-  );
+  // let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  // let docsFileLastUpdatedTimeStamp = Math.floor(
+  //   new Date(docsFileLastUpdated).getTime() / 1000
+  // );
 
   let summaryCreationTimeStamp = getCurrentTimeStamp();
   let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
@@ -229,7 +243,7 @@ const createInboxSummary = () => {
     ...addonSettings,
     docsFileId: docsFileId,
     docsFileLink: docsFileLink,
-    lastUpdatedDate: docsFileLastUpdatedTimeStamp,
+    // lastUpdatedDate: docsFileLastUpdatedTimeStamp,
     summaryCreationTime: summaryCreationTime,
   };
   saveAddonSettings(updatedAddonSettings);
@@ -281,21 +295,21 @@ const updateInboxSummary = () => {
   let summarizedEmails = summarization(inboxEmails);
 
   docBody.insertParagraph(0, summarizedEmails);
-  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(
-    new Date(docsFileLastUpdated).getTime() / 1000
-  );
+  // let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
+  // let docsFileLastUpdatedTimeStamp = Math.floor(
+  //   new Date(docsFileLastUpdated).getTime() / 1000
+  // );
 
   let updatedAddonSettings = {
     ...addonSettings,
     updateFunctionStatus: "finished",
-    lastUpdatedDate: docsFileLastUpdatedTimeStamp,
+    // lastUpdatedDate: docsFileLastUpdatedTimeStamp,
   };
   saveAddonSettings(updatedAddonSettings);
 
   let updatedBooleanSettings = {
     ...booleanSettings,
-    isFileUpdated: true,
+    // isFileUpdated: true,
   };
   saveBooleanSettings(updatedBooleanSettings);
 

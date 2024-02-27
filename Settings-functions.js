@@ -71,7 +71,7 @@ const createSettings = () => {
   if (!isBooleanSettingsExist) {
     newBooleanSettings = {
       createSummary: "default",
-      isFileUpdated: false,
+      // isFileUpdated: false,
       isAssistantCreated: false,
       isApiKeyValid: null,
     };
@@ -97,7 +97,7 @@ const createSettings = () => {
       assistantId: "",
       docsFileId: "",
       docsFileLink: "",
-      lastUpdatedDate: "",
+      // lastUpdatedDate: "",
       mainFunctionStatus: "idle",
       updateFunctionStatus: "idle",
       responseCreationStatus: "idle",
@@ -139,10 +139,10 @@ const changeProperty = () => {
 
 // DANGER ZONE
 
-/* 
 const deleteAllProperties = () => {
   let userProperties = PropertiesService.getUserProperties();
   userProperties.deleteAllProperties();
   console.log("All properties were deleted");
 };
+/* 
 */

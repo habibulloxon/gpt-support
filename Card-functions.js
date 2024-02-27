@@ -258,47 +258,43 @@ const confirmAssistantUpdateHandler = () => {
     userProperties.getProperty("booleanSettings")
   );
 
-  let isFileUpdatedStatus = isSummaryFileUpdated();
-  let isFileUpdated = booleanSettings.isFileUpdated;
+  // let isFileUpdatedStatus = isSummaryFileUpdated();
+  // let isFileUpdated = booleanSettings.isFileUpdated;
 
-  if (isFileUpdatedStatus || isFileUpdated) {
-    let progressAddonSettings = {
-      ...addonSettings,
-      updateFunctionStatus: "running",
-    };
+  let progressAddonSettings = {
+    ...addonSettings,
+    updateFunctionStatus: "running",
+  };
 
-    saveAddonSettings(progressAddonSettings);
+  saveAddonSettings(progressAddonSettings);
 
-    const assistantId = addonSettings.assistantId;
-    const apiKey = userSettings.openAiApiKey;
-    const oldFileId = addonSettings.fileId;
+  const assistantId = addonSettings.assistantId;
+  const apiKey = userSettings.openAiApiKey;
+  const oldFileId = addonSettings.fileId;
 
-    deleteAssistantFile(assistantId, oldFileId, apiKey);
-    deleteFile(oldFileId, apiKey);
+  deleteAssistantFile(assistantId, oldFileId, apiKey);
+  deleteFile(oldFileId, apiKey);
 
-    const newFileId = getUploadedFileId();
+  const newFileId = getUploadedFileId();
 
-    updateAssistantFile(apiKey, newFileId, assistantId);
+  updateAssistantFile(apiKey, newFileId, assistantId);
 
-    let updatedAddonSettings = {
-      ...addonSettings,
-      updateFunctionStatus: "finished",
-      fileId: newFileId,
-    };
-    saveAddonSettings(updatedAddonSettings);
+  let updatedAddonSettings = {
+    ...addonSettings,
+    updateFunctionStatus: "finished",
+    fileId: newFileId,
+  };
+  saveAddonSettings(updatedAddonSettings);
 
-    let updatedBooleanSettings = {
-      ...booleanSettings,
-      isFileUpdated: false,
-    };
-    saveBooleanSettings(updatedBooleanSettings);
+  let updatedBooleanSettings = {
+    ...booleanSettings,
+    // isFileUpdated: false,
+  };
+  saveBooleanSettings(updatedBooleanSettings);
 
-    sendAssistantFileUPdatedEmail();
-    const card = runAddon();
-    return CardService.newNavigation().updateCard(card);
-  } else {
-    console.log("There is nothing to change");
-  }
+  sendAssistantFileUPdatedEmail();
+  const card = runAddon();
+  return CardService.newNavigation().updateCard(card);
 };
 
 const regenerateInboxSummaryHandle = () => {
