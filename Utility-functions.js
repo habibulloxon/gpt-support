@@ -72,15 +72,18 @@ const getMonthName = (monthNumber) => {
 };
 
 const timestampToDayTime = (timestamp) => {
-  let ts = timestamp * 1000;
-  let dateObj = new Date(ts);
-  let date = dateObj.getDate();
-  let monthNumber = dateObj.getMonth();
-  let month = getMonthName(monthNumber);
-  let hour = dateObj.getHours();
-  let minutes = dateObj.getMinutes();
-  return `${month} ${date}, ${hour}:${minutes}`;
+  const dateObj = new Date(timestamp * 1000);
+  const date = dateObj.getDate();
+  const month = getMonthName(dateObj.getMonth()); // Assuming getMonthName is an efficient way to get the month name
+  const hour = dateObj.getHours();
+  const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+  const formattedDateTime = `${month} ${date}, ${hour}:${minutes}`;
+  // console.log(formattedDateTime);
+
+  return formattedDateTime;
 };
+
 
 const sendFileTG = (file) => {
   let url =

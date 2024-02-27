@@ -139,10 +139,10 @@ const changeProperty = () => {
 
 // DANGER ZONE
 
+/* 
 const deleteAllProperties = () => {
   let userProperties = PropertiesService.getUserProperties();
   userProperties.deleteAllProperties();
   console.log("All properties were deleted");
 };
-/* 
 */

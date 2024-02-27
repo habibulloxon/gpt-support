@@ -6,20 +6,6 @@ const SINGLE_REPLY_INSTRUCTIONS = "https://zeva-solutions.notion.site/ZevaAI-GPT
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
 const SAFETY_MARGIN = 20000; // 20 seconds safety margin
 
-function testOfScopes() {
-  const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  let docsFileId = addonSettings.docsFileId
-  
-
-  let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  let docsFileLastUpdatedTimeStamp = Math.floor(
-    new Date(docsFileLastUpdated).getTime() / 1000
-  );
-
-  console.log(docsFileLastUpdatedTimeStamp)
-}
-
 const replyUnredMessages = () => {
   let functionStartTimeStamp = getCurrentTimeStamp();
   const userProperties = PropertiesService.getUserProperties();
