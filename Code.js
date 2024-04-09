@@ -5,6 +5,7 @@ const INSTRUCTIONS_URL = "https://zeva-solutions.notion.site/zeva-solutions/Zeva
 const SINGLE_REPLY_INSTRUCTIONS = "https://zeva-solutions.notion.site/ZevaAI-GPT-assistant-for-Gmail-Step-by-step-guide-for-Single-reply-feature-f950f7b3e8c4433492a26f2aa3f29135?pvs=4"
 const MAX_EXECUTION_TIME = 360000; // 6 minutes in milliseconds
 const SAFETY_MARGIN = 20000; // 20 seconds safety margin
+const ERR_MSG = "An error has occurred while updating your knowledge base, please try again later. We apologise for any inconvenience this may cause. PLEASE REFRESH APP"
 
 const replyUnredMessages = () => {
   let functionStartTimeStamp = getCurrentTimeStamp();
@@ -258,72 +259,64 @@ const createInboxSummary = () => {
   return CardService.newNavigation().updateCard(card);
 };
 
-
 const updateInboxSummary = () => {
   const userProperties = PropertiesService.getUserProperties();
+  let addonSettings, booleanSettings;
+  try {
+    addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+    booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
 
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
-  );
+    let docsFileId = addonSettings.docsFileId;
+    console.log(docsFileId);
 
-  let docsFileId = addonSettings.docsFileId;
-  console.log(docsFileId)
+    let docsFile = DocumentApp.openById(docsFileId);
+    let docBody = docsFile.getBody();
+    console.log(docBody);
 
-  let docsFile = DocumentApp.openById(docsFileId);
-  let docBody = docsFile.getBody();
+    docBody.clear();
 
-  console.log(docBody)
+    let inboxEmails = getAllMessages();
+    let summarizedEmails = summarization(inboxEmails);
+    docBody.insertParagraph(0, summarizedEmails);
 
-  docBody.clear();
+    let updatedBooleanSettings = {
+      ...booleanSettings,
+    };
+    saveBooleanSettings(updatedBooleanSettings);
 
-  let inboxEmails = getAllMessages();
-  let summarizedEmails = summarization(inboxEmails);
+    let newAddonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+    let newUserSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
-  docBody.insertParagraph(0, summarizedEmails);
-  // let docsFileLastUpdated = DriveApp.getFileById(docsFileId).getLastUpdated();
-  // let docsFileLastUpdatedTimeStamp = Math.floor(
-  //   new Date(docsFileLastUpdated).getTime() / 1000
-  // );
+    let assistantId = newAddonSettings.assistantId;
+    let apiKey = newUserSettings.openAiApiKey;
+    let oldFileId = newAddonSettings.fileId;
 
-  let updatedAddonSettings = {
-    ...addonSettings,
-    updateFunctionStatus: "finished",
-    // lastUpdatedDate: docsFileLastUpdatedTimeStamp,
-  };
-  saveAddonSettings(updatedAddonSettings);
+    deleteAssistantFile(assistantId, oldFileId, apiKey);
+    deleteFile(oldFileId, apiKey);
 
-  let updatedBooleanSettings = {
-    ...booleanSettings,
-    // isFileUpdated: true,
-  };
-  saveBooleanSettings(updatedBooleanSettings);
+    let newFileId = getUploadedFileId();
+    updateAssistantFile(apiKey, newFileId, assistantId);
 
-  let newAddonSettings = JSON.parse(
-    userProperties.getProperty("addonSettings")
-  );
-  let newUserSettings = JSON.parse(userProperties.getProperty("userSettings"));
+    let summaryCreationTimeStamp = getCurrentTimeStamp();
+    let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
 
-  let assistantId = newAddonSettings.assistantId;
-  let apiKey = newUserSettings.openAiApiKey;
-  let oldFileId = newAddonSettings.fileId;
+    let updatedAddonSettingsWithFileId = {
+      ...newAddonSettings,
+      fileId: newFileId,
+      summaryCreationTime: summaryCreationTime,
+    };
+    saveAddonSettings(updatedAddonSettingsWithFileId);
 
-  deleteAssistantFile(assistantId, oldFileId, apiKey);
-  deleteFile(oldFileId, apiKey);
-
-  let newFileId = getUploadedFileId();
-
-  updateAssistantFile(apiKey, newFileId, assistantId);
-
-  let summaryCreationTimeStamp = getCurrentTimeStamp();
-  let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
-
-  let updatedAddonSettingsWithFileId = {
-    ...newAddonSettings,
-    fileId: newFileId,
-    summaryCreationTime: summaryCreationTime
-  };
-  saveAddonSettings(updatedAddonSettingsWithFileId);
-
-  sendSummaryUpdateEmail();
+    sendSummaryUpdateEmail();
+  } catch (error) {
+    console.error("Error in updateInboxSummary:", error);
+    sendErrorMessage(ERR_MSG);
+  } finally {
+    addonSettings = JSON.parse(userProperties.getProperty("addonSettings")); // Re-fetch in case it was updated
+    let updatedAddonSettings = {
+      ...addonSettings,
+      updateBaseFunctionStatus: "finished",
+    };
+    saveAddonSettings(updatedAddonSettings);
+  }
 };

@@ -101,3 +101,28 @@ const sendSummaryUpdateEmail = () => {
 
   console.log("Sent!");
 };
+
+const sendErrorMessage = (errMsg) => {
+  const email = Session.getActiveUser().getEmail();
+  const subject = `${ADDON_TITLE} - error`;
+  const template = HtmlService.createTemplateFromFile(
+    "error-notification.html"
+  );
+
+  let htmlOutput = template.evaluate().getContent();
+
+  let resultHTML = `<p><b>${errMsg}</b></p>`;
+
+  htmlOutput = htmlOutput.replace("{{errorText}}", resultHTML);
+
+  htmlOutput = htmlOutput.replace("{{link}}", resultHTML);
+
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    name: ADDON_TITLE,
+    htmlBody: htmlOutput,
+  });
+
+  console.log("Sent!");
+}

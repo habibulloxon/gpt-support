@@ -99,7 +99,7 @@ const createSettings = () => {
       docsFileLink: "",
       // lastUpdatedDate: "",
       mainFunctionStatus: "idle",
-      updateFunctionStatus: "idle",
+      updateBaseFunctionStatus: "idle",
       responseCreationStatus: "idle",
       messageId: "",
       threadIds: [],
@@ -132,17 +132,17 @@ const changeProperty = () => {
 
   let updatedSettings = {
     ...addonSettings,
-    singleMessageId: ""
+   updateBaseFunctionStatus: "idle",
   }
   saveAddonSettings(updatedSettings)
 }
 
 // DANGER ZONE
 
-/* 
 const deleteAllProperties = () => {
   let userProperties = PropertiesService.getUserProperties();
   userProperties.deleteAllProperties();
   console.log("All properties were deleted");
 };
+/* 
 */

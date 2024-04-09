@@ -9,7 +9,7 @@ const confirmSummaryRegenerateHandler = () => {
 
   let progressAddonSettings = {
     ...addonSettings,
-    updateFunctionStatus: "running",
+    updateBaseFunctionStatus: "running",
   };
   saveAddonSettings(progressAddonSettings);
 
@@ -25,7 +25,7 @@ const denySummaryRegenerateHandler = () => {
 
   let updatedAddonSettings = {
     ...addonSettings,
-    updateFunctionStatus: "idle",
+    updateBaseFunctionStatus: "idle",
   };
 
   saveAddonSettings(updatedAddonSettings);
@@ -256,49 +256,60 @@ const reEnterApiKeyHandler = () => {
 
 const confirmAssistantUpdateHandler = () => {
   const userProperties = PropertiesService.getUserProperties();
-  const addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
-  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
-  const booleanSettings = JSON.parse(
-    userProperties.getProperty("booleanSettings")
-  );
+  let addonSettings, userSettings, booleanSettings, newFileId;
 
-  // let isFileUpdatedStatus = isSummaryFileUpdated();
-  // let isFileUpdated = booleanSettings.isFileUpdated;
+  try {
+    addonSettings = JSON.parse(userProperties.getProperty("addonSettings"));
+    userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+    booleanSettings = JSON.parse(userProperties.getProperty("booleanSettings"));
 
-  let progressAddonSettings = {
-    ...addonSettings,
-    updateFunctionStatus: "running",
-  };
+    let progressAddonSettings = {
+      ...addonSettings,
+      updateBaseFunctionStatus: "running",
+    };
+    saveAddonSettings(progressAddonSettings);
 
-  saveAddonSettings(progressAddonSettings);
+    const assistantId = addonSettings.assistantId;
+    const apiKey = userSettings.openAiApiKey;
+    const oldFileId = addonSettings.fileId;
 
-  const assistantId = addonSettings.assistantId;
-  const apiKey = userSettings.openAiApiKey;
-  const oldFileId = addonSettings.fileId;
+    // Attempt to delete the assistant file and the file itself
+    deleteAssistantFile(assistantId, oldFileId, apiKey);
+    deleteFile(oldFileId, apiKey);
 
-  deleteAssistantFile(assistantId, oldFileId, apiKey);
-  deleteFile(oldFileId, apiKey);
+    // Get the new file ID and update the assistant file
+    newFileId = getUploadedFileId();
+    updateAssistantFile(apiKey, newFileId, assistantId);
 
-  const newFileId = getUploadedFileId();
+    // Save boolean settings without changes (this step seems redundant as per your code)
+    saveBooleanSettings(booleanSettings);
 
-  updateAssistantFile(apiKey, newFileId, assistantId);
+    // Send an email notification about the update
+    sendAssistantFileUpdatedEmail();
 
-  let updatedAddonSettings = {
-    ...addonSettings,
-    updateFunctionStatus: "finished",
-    fileId: newFileId,
-  };
-  saveAddonSettings(updatedAddonSettings);
+    let updatedAddonSettings = {
+      ...addonSettings,
+      fileId: newFileId, // Ensure this is defined outside the try block to be accessible here
+    };
+    saveAddonSettings(updatedAddonSettings);
 
-  let updatedBooleanSettings = {
-    ...booleanSettings,
-    // isFileUpdated: false,
-  };
-  saveBooleanSettings(updatedBooleanSettings);
-
-  sendAssistantFileUPdatedEmail();
-  const card = runAddon();
-  return CardService.newNavigation().updateCard(card);
+    // Run the addon and return the updated card
+    const card = runAddon();
+    return CardService.newNavigation().updateCard(card);
+  } catch (error) {
+    // Handle any errors that occur during the process
+    sendErrorMessage(ERR_MSG);
+  } finally {
+    // Ensure the addon settings are updated to reflect the process has finished
+    // This block executes regardless of whether the try block succeeds or an error is caught
+    addonSettings = JSON.parse(userProperties.getProperty("addonSettings")); // Re-fetch in case it was updated
+    let updatedAddonSettings = {
+      ...addonSettings,
+      updateBaseFunctionStatus: "finished",
+      fileId: newFileId, // Ensure this is defined outside the try block to be accessible here
+    };
+    saveAddonSettings(updatedAddonSettings);
+  }
 };
 
 const regenerateInboxSummaryHandle = () => {
@@ -307,7 +318,7 @@ const regenerateInboxSummaryHandle = () => {
 
   let progressAddonSettings = {
     ...addonSettings,
-    updateFunctionStatus: "pending",
+    updateBaseFunctionStatus: "pending",
   };
 
   saveAddonSettings(progressAddonSettings);
@@ -354,7 +365,7 @@ const runAddon = () => {
 
   // conditions
   const mainFunctionStatus = addonSettings.mainFunctionStatus;
-  const updateFunctionStatus = addonSettings.updateFunctionStatus;
+  const updateBaseFunctionStatus = addonSettings.updateBaseFunctionStatus;
   const createSummary = booleanSettings.createSummary;
 
   // user settings from properties
@@ -396,7 +407,7 @@ const runAddon = () => {
       `Great news! Your personal assistant and knowledge base file are now being set up. This process usually takes just a few minutes. As soon as it's ready, we'll send you a confirmation to your email address <b>${USER_EMAIL}</b>. If you need to step away, no worries—you won't miss a thing.`
     );
     cardSection.addWidget(loadingText);
-  } else if (updateFunctionStatus === "pending") {
+  } else if (updateBaseFunctionStatus === "pending") {
     const notificationText = CardService.newTextParagraph().setText(
       "Are you ready to update your assistant's knowledge? This will replace your current knowledge base with the latest information from your emails. This action is irreversible."
     );
@@ -426,9 +437,9 @@ const runAddon = () => {
       .setBackgroundColor("#057BCD")
       .setOnClickAction(reEnterApiKeyAction);
     cardSection.addWidget(button);
-  } else if (updateFunctionStatus === "running") {
+  } else if (updateBaseFunctionStatus === "running") {
     const loadingText = CardService.newTextParagraph().setText(
-      `We are currently updating your knowledge base. This process typically takes a few minutes. Once the update is complete, we'll send a notification to your email address <b>${USER_EMAIL}</b> to confirm the changes. Thank you for your patience!`
+      `We are currently updating your knowledge base. This process typically takes a few minutes. Once the update is complete, we'll send a notification to your email address <b>${USER_EMAIL}</b> to confirm the changes. <b>After this please refresh APP</b> Thank you for your patience!`
     );
     cardSection.addWidget(loadingText);
   } else {
