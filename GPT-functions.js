@@ -1,17 +1,56 @@
-const updateAssistantFile = (apiKey, fileId, assistantId) => {
+const createVectorStore = (fileId) => {
+  const userProperties = PropertiesService.getUserProperties();
+  const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
+
+  const apiKey = userSettings.openAiApiKey;
+  const companyName = userSettings.companyName;
+
+  try {
+    let url = "https://api.openai.com/v1/vector_stores";
+
+    let headers = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + apiKey,
+      "OpenAI-Beta": "assistants=v2",
+    }
+
+    let payload = {
+      name: `${companyName}-vector-store`,
+      file_ids: [fileId],
+    }
+
+    let options = {
+      method: "POST",
+      headers: headers,
+      payload: JSON.stringify(payload)
+    }
+
+    let response = JSON.parse(UrlFetchApp.fetch(url, options));
+    let vectorStoreId = response.id;
+    return vectorStoreId;
+  } catch {
+    console.error("error in creating vector store")
+  }
+}
+
+const updateAssistantFile = (apiKey, vectoreStoreId, assistantId) => {
   let url = `https://api.openai.com/v1/assistants/${assistantId}`;
 
-  var headers = {
+  let headers = {
     "Content-Type": "application/json",
     Authorization: "Bearer " + apiKey,
-    "OpenAI-Beta": "assistants=v1",
+    "OpenAI-Beta": "assistants=v2",
   };
 
-  var payload = {
-    file_ids: [`${fileId}`],
+  let payload = {
+    tool_resources: {
+      file_search: {
+        vector_store_ids: [`${vectoreStoreId}`]
+      }
+    },
   };
 
-  var options = {
+  let options = {
     method: "POST",
     headers: headers,
     payload: JSON.stringify(payload),
@@ -20,15 +59,32 @@ const updateAssistantFile = (apiKey, fileId, assistantId) => {
   UrlFetchApp.fetch(url, options);
 };
 
-const deleteFile = (fileId, apiKey) => {
-  var url = `https://api.openai.com/v1/files/${fileId}`;
-  var headers = {
+const deleteVectorStore = (vectorStoreId, apiKey) => {
+  let url = `https://api.openai.com/v1/vector_stores/${apiKey}`;
+
+  let headers = {
     Authorization: "Bearer " + apiKey,
     "Content-Type": "application/json",
-    "OpenAI-Beta": "assistants=v1",
+    "OpenAI-Beta": "assistants=v2",
+  }; 
+
+  let options = {
+    method: "DELETE", 
+    headers: headers
   };
 
-  var options = {
+  UrlFetchApp.fetch(url, options);
+}
+
+const deleteFile = (fileId, apiKey) => {
+  let url = `https://api.openai.com/v1/files/${fileId}`;
+  let headers = {
+    Authorization: "Bearer " + apiKey,
+    "Content-Type": "application/json",
+    "OpenAI-Beta": "assistants=v2",
+  };
+
+  let options = {
     method: "DELETE",
     headers: headers,
   };
@@ -37,14 +93,14 @@ const deleteFile = (fileId, apiKey) => {
 };
 
 const deleteAssistantFile = (assistantId, fileId, apiKey) => {
-  var url = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`;
-  var headers = {
+  let url = `https://api.openai.com/v1/assistants/${assistantId}/files/${fileId}`;
+  let headers = {
     Authorization: "Bearer " + apiKey,
     "Content-Type": "application/json",
-    "OpenAI-Beta": "assistants=v1",
+    "OpenAI-Beta": "assistants=v2",
   };
 
-  var options = {
+  let options = {
     method: "DELETE",
     headers: headers,
   };
@@ -69,13 +125,13 @@ const updateAssistantInstructions = () => {
   let headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
-    "OpenAI-Beta": "assistants=v1",
+    "OpenAI-Beta": "assistants=v2",
   };
 
   let payload = {
     instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
     tools: [{ type: "retrieval" }],
-    model: "gpt-4-1106-preview",
+    model: "gpt-4-turbo",
     file_ids: [`${fileId}`],
   };
 
@@ -109,7 +165,7 @@ const checkIsApiKeyProper = (apiKey) => {
     method: "GET",
     muteHttpExceptions: true,
     payload: JSON.stringify({
-      model: "gpt-4-1106-preview",
+      model: "gpt-4-turbo",
       messages: [
         {
           role: "system",
@@ -147,7 +203,7 @@ const summarization = (input) => {
       method: "GET",
       muteHttpExceptions: true,
       payload: JSON.stringify({
-        model: "gpt-4-1106-preview", // gpt-4-1106-preview
+        model: "gpt-4-turbo", // gpt-4-turbo
         messages: [
           {
             role: "system",
@@ -222,7 +278,7 @@ const getUploadedFileId = () => {
  * @param {string} fileId - base file for creating assistant.
  * @returns {integer} - create assistant id.
  */
-const getCreatedAssistantId = (fileId) => {
+const getCreatedAssistantId = (vectoreStoreId) => {
   const userProperties = PropertiesService.getUserProperties();
   const userSettings = JSON.parse(userProperties.getProperty("userSettings"));
 
@@ -235,16 +291,21 @@ const getCreatedAssistantId = (fileId) => {
     let headers = {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "OpenAI-Beta": "assistants=v1",
+      "OpenAI-Beta": "assistants=v2",
     };
     let payload = {
       name: `${USERNAME}-assistant`,
       description: `Support bot of ${USERNAME}`,
       instructions: `You are a Support Agent in ${companyName} and your name is ${name}, you need to answer and help people with their questions via email. Your email style, structure and manner always must be the same as in the uploaded file.`,
-      tools: [{ type: "retrieval" }],
-      model: "gpt-4-1106-preview", // gpt-4-1106-preview
-      file_ids: [`${fileId}`],
+      model: "gpt-4-turbo",
+      tools: [{ type: "file_search" }],
+      tool_resources: {
+        file_search: {
+          vector_store_ids: [`${vectoreStoreId}`]
+        }
+      },
     };
+
     let payloadJson = JSON.stringify(payload);
     let response = UrlFetchApp.fetch(url, {
       method: "post",
@@ -272,12 +333,14 @@ const createAssistant = () => {
 
   try {
     let fileId = getUploadedFileId();
-    let assistantId = getCreatedAssistantId(fileId);
+    let vectorStoreId = createVectorStore(fileId);
+    let assistantId = getCreatedAssistantId(vectorStoreId);
 
     let updatedAddonSettings = {
       ...addonSettings,
       mainFunctionStatus: "finished",
       fileId: fileId,
+      vectorStoreId: vectorStoreId,
       assistantId: assistantId,
     };
     saveAddonSettings(updatedAddonSettings);
@@ -312,7 +375,7 @@ const createNewThread = () => {
       let headers = {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "OpenAI-Beta": "assistants=v1",
+        "OpenAI-Beta": "assistants=v2",
       };
       let options = {
         method: "post",
@@ -387,7 +450,7 @@ const addMessageToAssistantThread = (assistantThreadId, message) => {
     let headers = {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "OpenAI-Beta": "assistants=v1",
+      "OpenAI-Beta": "assistants=v2",
     };
     let payload = {
       role: "user",
@@ -430,7 +493,7 @@ const runAssistantThread = (threadId, user) => {
     let headers = {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "OpenAI-Beta": "assistants=v1",
+      "OpenAI-Beta": "assistants=v2",
     };
     let payload = {
       assistant_id: assistantId,
@@ -466,7 +529,7 @@ const retrieveRunStatus = (threadId, runId) => {
     let headers = {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "OpenAI-Beta": "assistants=v1",
+      "OpenAI-Beta": "assistants=v2",
     };
     let options = {
       method: "get",
@@ -500,7 +563,7 @@ const getAssistantMessages = (threadId) => {
     let headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      "OpenAI-Beta": "assistants=v1",
+      "OpenAI-Beta": "assistants=v2",
     };
     let options = {
       method: "get",
@@ -543,7 +606,7 @@ const deleteAssistantAndFile = () => {
   const assistantHeaders = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
-    "OpenAI-Beta": "assistants=v1",
+    "OpenAI-Beta": "assistants=v2",
   };
 
   const assistantOptions = {

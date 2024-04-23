@@ -290,12 +290,15 @@ const updateInboxSummary = () => {
     let assistantId = newAddonSettings.assistantId;
     let apiKey = newUserSettings.openAiApiKey;
     let oldFileId = newAddonSettings.fileId;
+    let oldVectorStoreId = newAddonSettings.vectorStoreId;
 
     deleteAssistantFile(assistantId, oldFileId, apiKey);
+    deleteVectorStore(oldVectorStoreId);
     deleteFile(oldFileId, apiKey);
 
     let newFileId = getUploadedFileId();
-    updateAssistantFile(apiKey, newFileId, assistantId);
+    let newVectorStoreId = createVectorStore(newFileId);
+    updateAssistantFile(apiKey, newVectorStoreId, assistantId);
 
     let summaryCreationTimeStamp = getCurrentTimeStamp();
     let summaryCreationTime = timestampToDayTime(summaryCreationTimeStamp);
@@ -303,6 +306,7 @@ const updateInboxSummary = () => {
     let updatedAddonSettingsWithFileId = {
       ...newAddonSettings,
       fileId: newFileId,
+      vectorStoreId: newVectorStoreId,
       summaryCreationTime: summaryCreationTime,
     };
     saveAddonSettings(updatedAddonSettingsWithFileId);

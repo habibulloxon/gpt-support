@@ -94,6 +94,7 @@ const createSettings = () => {
   if (!isAddonSettingsExist) {
     newAddonSettings = {
       fileId: "",
+      vectorStoreId: "",
       assistantId: "",
       docsFileId: "",
       docsFileLink: "",
